@@ -1,0 +1,101 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-glass: rgba(255, 255, 255, 0.45);
+  --color-glass-border: rgba(255, 255, 255, 0.35);
+  --color-glass-dark: rgba(255, 255, 255, 0.65);
+  --color-shop-emerald: #10b981;
+  --color-shop-leaf: #22c55e;
+  --color-shop-lime: #84cc16;
+  --color-shop-carrot: #f97316;
+  --color-shop-radish: #e11d48;
+  --color-shop-lemon: #eab308;
+  --color-shop-sky: #0ea5e9;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background-color: #f0fdf4;
+  overflow-x: hidden;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.glass {
+  background: var(--color-glass);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+
+.glass-dark {
+  background: var(--color-glass-dark);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+
+.glass-nav {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255,255,255,0.3);
+}
+
+@supports not (backdrop-filter: blur(16px)) {
+  .glass, .glass-dark, .glass-nav {
+    background: rgba(255, 255, 255, 0.95);
+  }
+}
+
+.mesh-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background-image: 
+    radial-gradient(at 40% 20%, hsla(140, 100%, 74%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsla(28, 100%, 74%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, hsla(50, 100%, 70%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, hsla(80, 100%, 65%, 0.4) 0px, transparent 50%);
+  animation: mesh 30s ease-in-out infinite alternate;
+}
+
+@keyframes mesh {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes btnBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+}
+
+.btn-bounce:active {
+  animation: btnBounce 0.2s ease-in-out;
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #22c55e;
+  border-radius: 4px;
+}

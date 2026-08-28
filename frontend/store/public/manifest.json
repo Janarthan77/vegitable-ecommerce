@@ -1,0 +1,22 @@
+{
+  "name": "Fresh Veggies - உங்கள் காய்கறி கடை",
+  "short_name": "Fresh Veggies",
+  "description": "Farm fresh vegetables ordered in 1 tap with lively glassmorphism UI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0fdf4",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
