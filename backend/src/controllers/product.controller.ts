@@ -14,10 +14,10 @@ export async function getProducts(req: Request, res: Response): Promise<void> {
     }
 
     if (search) {
-      const q = String(search).toLowerCase();
+      const q = String(search);
       where.OR = [
-        { name: { contains: q } },
-        { tamilName: { contains: q } },
+        { name: { contains: q, mode: 'insensitive' } },
+        { tamilName: { contains: q, mode: 'insensitive' } },
       ];
     }
 
