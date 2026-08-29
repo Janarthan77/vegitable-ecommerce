@@ -35,16 +35,27 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static uploads (for local fallback files if Cloudflare R2 credentials not provided)
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
-// API Routes
+// API Routes (supports both /api/* and direct /* paths for maximum compatibility)
 app.use('/api/products', productRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/upload', uploadRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/settings', settingsRoutes);
+app.use('/products', productRoutes);
 
-// Health check endpoint
-app.get('/api/health', (_req, res) => {
+app.use('/api/categories', categoryRoutes);
+app.use('/categories', categoryRoutes);
+
+app.use('/api/orders', orderRoutes);
+app.use('/orders', orderRoutes);
+
+app.use('/api/upload', uploadRoutes);
+app.use('/upload', uploadRoutes);
+
+app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
+
+app.use('/api/settings', settingsRoutes);
+app.use('/settings', settingsRoutes);
+
+// Health check endpoint (both /api/health and /health)
+const healthHandler = (_req: any, res: any) => {
   res.json({
     status: 'ok',
     message: 'Vegetable E-Commerce API is running',
@@ -54,7 +65,9 @@ app.get('/api/health', (_req, res) => {
     ),
     timestamp: new Date().toISOString(),
   });
-});
+};
+app.get('/api/health', healthHandler);
+app.get('/health', healthHandler);
 
 // Root landing endpoint
 app.get('/', (_req, res) => {
