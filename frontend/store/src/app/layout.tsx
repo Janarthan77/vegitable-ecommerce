@@ -1,23 +1,33 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Playfair_Display, DM_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'sonner';
 import { FloatingNav } from '@/components/ui/floating-nav';
-import { CartDrawer } from '@/components/store/cart-drawer';
+import { DesktopNavbar } from '@/components/store/desktop-navbar';
+import { ReduxProvider } from '@/components/providers/redux-provider';
 
-const inter = Inter({
+const playfair = Playfair_Display({
+  variable: '--font-display',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+});
+
+const dmSans = DM_Sans({
   variable: '--font-sans',
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'Fresh Veggies 🥬 | உங்கள் காய்கறி கடை',
-  description: 'Farm fresh vegetables delivered to your doorstep. Order online with bright organic produce.',
+  title: 'Kaikaari | உங்கள் காய்கறி கடை',
+  description: 'Farm fresh vegetables delivered to your doorstep. Handpicked quality every day.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Fresh Veggies',
+    title: 'Kaikaari',
   },
 };
 
@@ -27,24 +37,34 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col relative font-sans text-gray-900 bg-emerald-50/40 selection:bg-emerald-500 selection:text-white">
-        {/* Animated Mesh Gradient background */}
-        <div className="fixed inset-0 pointer-events-none -z-10 mesh-gradient opacity-70" />
-        
-        {/* Main Content Area */}
-        <main className="flex-1 pb-24 max-w-lg mx-auto w-full shadow-2xl shadow-emerald-900/5 min-h-screen bg-white/30 backdrop-blur-[2px]">
-          {children}
-        </main>
+    <html
+      lang="en"
+      className={`${playfair.variable} ${dmSans.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col font-sans text-gray-900 bg-[#FAFAF6] selection:bg-forest selection:text-white"
+      >
+        <ReduxProvider>
+          {/* Subtle warm texture overlay */}
+          <div className="fixed inset-0 pointer-events-none -z-10 noise-texture" />
 
-        {/* Global Toasts */}
-        <Toaster position="top-center" richColors />
+          {/* Desktop Navigation for Laptops & Screens */}
+          <DesktopNavbar />
 
-        {/* Floating App Navigation Bar & Cart Drawer */}
-        <div className="max-w-lg mx-auto w-full">
-          <FloatingNav />
-          <CartDrawer />
-        </div>
+          {/* Main Content Area - Responsive for Mobile & Laptops */}
+          <main className="flex-1 pb-32 sm:pb-28 md:pb-12 max-w-lg md:max-w-7xl mx-auto w-full min-h-screen bg-[#FAFAF6] md:border-x border-stone-200/60 shadow-[0_0_80px_rgba(0,0,0,0.04)]">
+            {children}
+          </main>
+
+          <Toaster position="top-center" richColors />
+
+          {/* Floating Mobile Nav */}
+          <div className="w-full">
+            <FloatingNav />
+          </div>
+        </ReduxProvider>
       </body>
     </html>
   );

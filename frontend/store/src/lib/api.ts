@@ -70,3 +70,14 @@ export async function submitOrder(orderData: {
 
   return await res.json();
 }
+
+export async function fetchStoreSettings(): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/settings`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (error) {
+    console.warn('Could not fetch store settings:', error);
+    return null;
+  }
+}

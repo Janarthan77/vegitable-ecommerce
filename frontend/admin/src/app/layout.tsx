@@ -1,17 +1,26 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Playfair_Display, DM_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'sonner';
-import { AdminSidebar } from '@/components/admin/sidebar';
+import { AdminLayoutShell } from '@/components/admin/admin-layout-shell';
 
-const inter = Inter({
+const playfair = Playfair_Display({
+  variable: '--font-display',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+});
+
+const dmSans = DM_Sans({
   variable: '--font-sans',
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'Fresh Veggies Admin 🥬 | கடை நிர்வாகம்',
-  description: 'Vegetable Store Admin Dashboard with Cloudflare Image Integration',
+  title: 'Kaikaari Admin | கடை நிர்வாகம்',
+  description: 'Farm Fresh Vegetables Admin Dashboard',
 };
 
 export default function RootLayout({
@@ -20,21 +29,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans text-slate-800 bg-slate-50/50 selection:bg-sky-500 selection:text-white">
-        {/* Background Mesh Gradient */}
-        <div className="fixed inset-0 pointer-events-none -z-10 mesh-gradient opacity-60" />
-        
-        <div className="flex flex-col md:flex-row min-h-screen">
-          <AdminSidebar />
-          
-          <main className="flex-1 p-4 md:p-8 overflow-y-auto pb-24 md:pb-8">
-            <div className="max-w-6xl mx-auto">
-              {children}
-            </div>
-          </main>
-        </div>
-
+    <html lang="en" className={`${playfair.variable} ${dmSans.variable} h-full antialiased`} suppressHydrationWarning>
+      <body suppressHydrationWarning className="min-h-full font-sans text-[#1A1A1A] bg-[#FAFAF6] selection:bg-[#14532D] selection:text-white">
+        <AdminLayoutShell>
+          {children}
+        </AdminLayoutShell>
         <Toaster position="top-right" richColors />
       </body>
     </html>

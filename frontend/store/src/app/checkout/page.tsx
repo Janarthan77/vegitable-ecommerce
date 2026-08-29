@@ -6,12 +6,11 @@ import { useCart } from '@/lib/store/use-cart'
 import { GlassCard } from '@/components/ui/glass-card'
 import { GlassButton } from '@/components/ui/glass-button'
 import { GlassInput } from '@/components/ui/glass-input'
-import { formatPrice, buildWhatsAppMessage, generateOrderId } from '@/lib/utils'
-import { submitOrder } from '@/lib/api'
+import { formatPrice, formatProductWeight, getItemTotalPrice, buildWhatsAppMessage, generateOrderId } from '@/lib/utils'
+import { submitOrder, fetchStoreSettings } from '@/lib/api'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Send, MessageCircle } from 'lucide-react'
+import { ArrowLeft, ShoppingBag } from 'lucide-react'
 import { toast } from 'sonner'
-import Link from 'next/link'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -25,6 +24,13 @@ export default function CheckoutPage() {
     notes: ''
   })
 
+  const [deliverySettings, setDeliverySettings] = useState({
+    minOrder: 100,
+    deliveryCharge: 0,
+    deliveryRadius: 10,
+  })
+
+  const [submitting, setSubmitting] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -33,6 +39,27 @@ export default function CheckoutPage() {
       router.push('/cart')
     }
   }, [items.length, router])
+
+  useEffect(() => {
+    fetchStoreSettings()
+      .then(data => {
+        if (data?.delivery_settings) {
+          setDeliverySettings({
+            minOrder: Number(data.delivery_settings.minOrder) || 100,
+            deliveryCharge: Number(data.delivery_settings.deliveryCharge) || 0,
+            deliveryRadius: Number(data.delivery_settings.deliveryRadius) || 10,
+          })
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const subtotal = total
+  const minOrder = deliverySettings.minOrder
+  const baseDeliveryCharge = deliverySettings.deliveryCharge
+  const isFreeDelivery = baseDeliveryCharge === 0 || subtotal >= minOrder
+  const deliveryFee = isFreeDelivery ? 0 : baseDeliveryCharge
+  const finalTotal = subtotal + deliveryFee
 
   if (!mounted || items.length === 0) {
     return null
@@ -58,20 +85,11 @@ export default function CheckoutPage() {
     return true
   }
 
-  const handleWhatsAppOrder = () => {
+  const handleOrder = async () => {
     if (!validateForm()) return
-    
-    const orderId = generateOrderId()
-    const message = buildWhatsAppMessage(items, total, formData.name)
-    
-    window.open(`https://wa.me/919876543210?text=${encodeURIComponent(message)}`, '_blank')
-    clearCart()
-    router.push(`/order-success?id=${orderId}`)
-  }
+    setSubmitting(true)
 
-  const handlePlaceOrder = async () => {
-    if (!validateForm()) return
-    
+    let orderId = generateOrderId()
     try {
       const created = await submitOrder({
         customerName: formData.name,
@@ -79,123 +97,158 @@ export default function CheckoutPage() {
         customerAddress: formData.address,
         notes: formData.notes,
         items,
-        total,
+        total: finalTotal,
       })
-      toast.success('Order placed successfully!')
-      clearCart()
-      router.push(`/order-success?id=${created.id}`)
-    } catch (err: any) {
-      // Fallback
-      const orderId = generateOrderId()
-      toast.success('Order placed successfully!')
-      clearCart()
-      router.push(`/order-success?id=${orderId}`)
+      if (created?.id) {
+        orderId = created.id
+      }
+    } catch {
+      // Continue with local order id
     }
+
+    // Build WhatsApp message for owner
+    const message = buildWhatsAppMessage(
+      items,
+      finalTotal,
+      formData.name,
+      formData.phone,
+      formData.address,
+      formData.notes,
+      orderId.slice(0, 8).toUpperCase()
+    )
+
+    // Open WhatsApp directly to shop owner (+91 98765 43210)
+    const ownerNumber = '919876543210'
+    const waUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(message)}`
+    window.open(waUrl, '_blank')
+
+    clearCart()
+    toast.success('Order placed successfully!')
+    router.push(`/order-success?id=${orderId}`)
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-28 px-4 pt-6 gap-6">
-      <div className="flex items-center gap-4">
-        <GlassButton onClick={() => router.back()} size="sm" variant="ghost">
-          <ArrowLeft className="h-5 w-5 text-emerald-800" />
+    <div className="flex flex-col px-4 sm:px-6 lg:px-8 pt-6 pb-12 gap-6">
+      <div className="flex items-center gap-3">
+        <GlassButton onClick={() => router.back()} size="sm" variant="ghost" className="!px-2.5 !py-2">
+          <ArrowLeft className="h-5 w-5 text-[#14532D]" />
         </GlassButton>
-        <h1 className="text-2xl font-bold text-emerald-950">Checkout</h1>
+        <h1 className="font-display text-2xl sm:text-3xl font-semibold text-[#1A1A1A]">Checkout & Delivery</h1>
       </div>
 
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col gap-6"
+        className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start"
       >
-        <GlassCard className="p-5 flex flex-col gap-4">
-          <h2 className="font-semibold text-emerald-900">Delivery Details</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-emerald-800 ml-1 mb-1 block">Name *</label>
-              <GlassInput 
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="John Doe" 
-              />
-            </div>
+        {/* Left column: Form inputs */}
+        <div className="md:col-span-7 lg:col-span-8">
+          <GlassCard className="p-6 flex flex-col gap-4">
+            <h2 className="font-display font-semibold text-[#1A1A1A] text-lg">Recipient & Delivery Address</h2>
             
-            <div>
-              <label className="text-sm font-medium text-emerald-800 ml-1 mb-1 block">Phone Number *</label>
-              <GlassInput 
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="+91 98765 43210" 
-                type="tel"
-              />
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-emerald-800 ml-1 mb-1 block">Delivery Address *</label>
-              <textarea 
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                className="w-full bg-white/40 border border-white/50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500/50 text-emerald-950 placeholder:text-emerald-800/40 min-h-[100px] resize-none"
-                placeholder="Enter your full address"
-              />
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-emerald-800 ml-1 mb-1 block">Order Notes (Optional)</label>
-              <textarea 
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                className="w-full bg-white/40 border border-white/50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500/50 text-emerald-950 placeholder:text-emerald-800/40 min-h-[80px] resize-none"
-                placeholder="Any special instructions..."
-              />
-            </div>
-          </div>
-        </GlassCard>
-
-        <GlassCard className="p-5">
-          <h2 className="font-semibold text-emerald-900 mb-4">Order Summary</h2>
-          <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto pr-2">
-            {items.map((item) => (
-              <div key={`${item.product.id}-${item.weight}`} className="flex justify-between text-sm">
-                <span className="text-emerald-800">
-                  {item.quantity}x {item.product.name} ({item.weight}{item.product.unit === 'kg' ? 'g' : ''})
-                </span>
-                <span className="font-medium text-emerald-950">
-                  {formatPrice(item.product.price * (item.weight / (item.product.unit === 'kg' ? 1000 : 1)) * item.quantity)}
-                </span>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <GlassInput 
+                  label="Full Name *"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="e.g. Anand Kumar" 
+                />
+                <GlassInput 
+                  label="Phone Number *"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+91 98765 43210" 
+                  type="tel"
+                />
               </div>
-            ))}
-          </div>
-          
-          <div className="h-px w-full bg-white/50 my-3" />
-          
-          <div className="flex justify-between items-center mb-6">
-            <span className="font-bold text-emerald-950">Total to Pay</span>
-            <span className="font-bold text-xl text-emerald-600">{formatPrice(total)}</span>
-          </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1.5 font-sans">Full Delivery Address *</label>
+                <textarea 
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 outline-none focus:border-[#14532D] focus:ring-2 focus:ring-[#14532D]/10 text-sm text-[#1A1A1A] placeholder:text-stone-400 min-h-[90px] resize-none transition-all font-sans"
+                  placeholder="Door no, Street name, Landmark, City & Pincode"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1.5 font-sans">Delivery Instructions (Optional)</label>
+                <textarea 
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleChange}
+                  className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 outline-none focus:border-[#14532D] focus:ring-2 focus:ring-[#14532D]/10 text-sm text-[#1A1A1A] placeholder:text-stone-400 min-h-[70px] resize-none transition-all font-sans"
+                  placeholder="Any special notes for our delivery executive..."
+                />
+              </div>
+            </div>
+          </GlassCard>
+        </div>
 
-          <div className="flex flex-col gap-3">
-            <GlassButton 
-              onClick={handleWhatsAppOrder}
-              className="w-full py-4 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold border-none shadow-lg shadow-[#25D366]/30 flex items-center justify-center gap-2"
-            >
-              <MessageCircle className="h-5 w-5" />
-              Order via WhatsApp
-            </GlassButton>
+        {/* Right column: Sticky Summary on desktop */}
+        <div className="md:col-span-5 lg:col-span-4 md:sticky md:top-36">
+          <GlassCard className="p-6">
+            <h2 className="font-display font-semibold text-[#1A1A1A] text-lg mb-3">Order Items Review</h2>
+            <div className="space-y-2.5 mb-4 pr-1">
+              {items.map((item) => (
+                <div key={`${item.product.id}-${item.weight}`} className="flex justify-between text-xs font-sans">
+                  <span className="text-stone-600">
+                    {item.quantity}× {item.product.name} ({formatProductWeight(item.product, item.weight)})
+                  </span>
+                  <span className="font-semibold text-[#B45309]">
+                    {formatPrice(getItemTotalPrice(item))}
+                  </span>
+                </div>
+              ))}
+            </div>
             
-            <GlassButton 
-              onClick={handlePlaceOrder}
-              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2"
+            <div className="h-px w-full bg-stone-100 my-3" />
+
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between text-xs sm:text-sm font-sans text-stone-600">
+                <span>Items Subtotal</span>
+                <span className="font-semibold text-[#1A1A1A]">{formatPrice(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-xs sm:text-sm font-sans items-center">
+                <span className="text-stone-600">Delivery Charge</span>
+                {isFreeDelivery ? (
+                  <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] border border-emerald-200">
+                    FREE
+                  </span>
+                ) : (
+                  <span className="font-bold text-[#B45309]">+{formatPrice(deliveryFee)}</span>
+                )}
+              </div>
+
+              {!isFreeDelivery && subtotal < minOrder && (
+                <p className="text-[11px] text-stone-500 font-sans bg-amber-50/70 p-2 rounded-lg border border-amber-200/60 mt-1">
+                  💡 Add <span className="font-bold text-[#B45309]">{formatPrice(minOrder - subtotal)}</span> more for Free Delivery!
+                </p>
+              )}
+            </div>
+
+            <div className="h-px w-full bg-stone-100 my-3" />
+            
+            <div className="flex justify-between items-baseline mb-5">
+              <span className="font-bold text-base text-[#1A1A1A]">Total Payable</span>
+              <span className="font-display font-bold text-3xl text-[#B45309]">{formatPrice(finalTotal)}</span>
+            </div>
+
+            <button 
+              type="button"
+              disabled={submitting}
+              onClick={handleOrder}
+              className="w-full py-4 bg-[#14532D] hover:bg-[#166534] active:scale-[0.99] text-white font-bold text-base rounded-xl shadow-lg shadow-[#14532D]/20 flex items-center justify-center gap-2 transition-all cursor-pointer tracking-wide disabled:opacity-50"
             >
-              <Send className="h-5 w-5" />
-              Place Order Direct
-            </GlassButton>
-          </div>
-        </GlassCard>
+              {submitting ? 'Placing Order...' : 'Order'}
+            </button>
+          </GlassCard>
+        </div>
       </motion.div>
     </div>
   )

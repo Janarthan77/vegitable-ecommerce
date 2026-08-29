@@ -4,10 +4,10 @@ import { motion } from 'framer-motion'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-interface GlassButtonProps {
+interface PremiumButtonProps {
   children: ReactNode
   onClick?: () => void
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'whatsapp'
   size?: 'sm' | 'md' | 'lg'
   className?: string
   disabled?: boolean
@@ -27,33 +27,34 @@ export function GlassButton({
   fullWidth,
   icon,
   type,
-  form
-}: GlassButtonProps) {
+  form,
+}: PremiumButtonProps) {
   const variants = {
-    primary: 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/25',
-    secondary: 'bg-white/50 backdrop-blur-lg border border-white/40 text-gray-700',
-    danger: 'bg-gradient-to-r from-rose-500 to-red-600 text-white',
-    ghost: 'bg-transparent text-gray-600 hover:bg-white/30',
+    primary:   'bg-[#14532D] text-white shadow-md shadow-[#14532D]/20 hover:bg-[#166534]',
+    secondary: 'bg-white text-[#14532D] border border-[#14532D]/30 hover:border-[#14532D]/60 hover:bg-[#f0fdf4]',
+    danger:    'bg-rose-600 text-white shadow-md shadow-rose-600/20 hover:bg-rose-700',
+    ghost:     'bg-transparent text-[#14532D] hover:bg-[#DCFCE7]/60',
+    whatsapp:  'bg-[#25D366] text-white shadow-md shadow-[#25D366]/20 hover:bg-[#22c55e]',
   }
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-5 py-2.5 text-base',
-    lg: 'px-7 py-3.5 text-lg',
+    sm: 'px-4 py-2 text-sm gap-1.5',
+    md: 'px-5 py-2.5 text-sm gap-2',
+    lg: 'px-7 py-3.5 text-base gap-2',
   }
 
   return (
     <motion.button
-      whileHover={disabled ? {} : { scale: 1.02 }}
-      whileTap={disabled ? {} : { scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      whileHover={disabled ? {} : { scale: 1.015 }}
+      whileTap={disabled ? {} : { scale: 0.97 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 22 }}
       disabled={disabled}
       className={cn(
-        'rounded-xl font-semibold transition-all flex items-center justify-center gap-2',
+        'rounded-xl font-semibold tracking-wide transition-colors flex items-center justify-center',
         variants[variant],
         sizes[size],
         fullWidth && 'w-full',
-        disabled && 'opacity-50 cursor-not-allowed',
+        disabled && 'opacity-40 cursor-not-allowed',
         className
       )}
       onClick={onClick}

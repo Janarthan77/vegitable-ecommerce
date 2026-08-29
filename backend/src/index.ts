@@ -11,18 +11,14 @@ import categoryRoutes from './routes/categories.routes.js';
 import orderRoutes from './routes/orders.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5050;
 
-// Enable CORS for frontend store and admin
-app.use(
-  cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
+// Enable CORS for all frontends (Admin, Storefront, Mobile)
+app.use(cors());
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -36,6 +32,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (_req, res) => {

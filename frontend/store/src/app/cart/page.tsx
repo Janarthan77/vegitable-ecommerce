@@ -1,149 +1,207 @@
 'use client'
 
 import { useCart } from '@/lib/store/use-cart'
-import { formatPrice, formatWeight } from '@/lib/utils'
+import { formatPrice, formatProductWeight, getItemTotalPrice } from '@/lib/utils'
 import { GlassCard } from '@/components/ui/glass-card'
-import { GlassButton } from '@/components/ui/glass-button'
 import { GlassBadge } from '@/components/ui/glass-badge'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react'
-import Link from 'next/link'
+import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { fetchStoreSettings } from '@/lib/api'
 
 export default function CartPage() {
+  const [mounted, setMounted] = useState(false)
   const { items, updateQuantity, removeItem, getTotal, getItemCount } = useCart()
   const total = getTotal()
   const itemCount = getItemCount()
   const router = useRouter()
+
+  const [deliverySettings, setDeliverySettings] = useState({
+    minOrder: 100,
+    deliveryCharge: 0,
+    deliveryRadius: 10,
+  })
   
-  const deliveryFee = 0 // Free delivery
+  useEffect(() => {
+    setMounted(true)
+    fetchStoreSettings()
+      .then(data => {
+        if (data?.delivery_settings) {
+          setDeliverySettings({
+            minOrder: Number(data.delivery_settings.minOrder) || 100,
+            deliveryCharge: Number(data.delivery_settings.deliveryCharge) || 0,
+            deliveryRadius: Number(data.delivery_settings.deliveryRadius) || 10,
+          })
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const subtotal = total
+  const minOrder = deliverySettings.minOrder
+  const baseDeliveryCharge = deliverySettings.deliveryCharge
+  const isFreeDelivery = baseDeliveryCharge === 0 || subtotal >= minOrder
+  const deliveryFee = isFreeDelivery ? 0 : baseDeliveryCharge
+  const finalTotal = subtotal + deliveryFee
+
+  if (!mounted) {
+    return (
+      <div className="py-20 flex flex-col items-center justify-center p-6 text-center">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-14 h-14 bg-stone-200 rounded-full mb-3" />
+          <div className="h-5 w-32 bg-stone-200 rounded" />
+        </div>
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', damping: 12 }}
-          className="text-8xl mb-6 drop-shadow-xl"
-        >
+      <div className="py-24 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 bg-[#F5F5F0] rounded-3xl flex items-center justify-center text-4xl mb-4 border border-stone-200">
           🛒
-        </motion.div>
-        <h2 className="text-2xl font-bold text-emerald-900 mb-2">Your cart is empty</h2>
-        <p className="text-emerald-700/70 mb-8">Looks like you haven't added any fresh vegetables yet.</p>
+        </div>
+        <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#1A1A1A] mb-1">Your cart is empty</h2>
+        <p className="text-stone-400 text-sm mb-6 max-w-xs font-sans">
+          Looks like you haven't added any fresh farm vegetables yet.
+        </p>
         <Link href="/">
-          <GlassButton className="px-8 py-6 text-lg rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600">
-            Start Shopping
-          </GlassButton>
+          <button className="px-8 py-3.5 rounded-xl bg-[#14532D] text-white font-bold text-sm shadow-md shadow-[#14532D]/20 hover:bg-[#166534] transition-colors cursor-pointer">
+            Start Shopping Fresh Produce
+          </button>
         </Link>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-28 px-4 pt-6 gap-6">
+    <div className="flex flex-col px-4 sm:px-6 lg:px-8 pt-6 pb-12 gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-emerald-950 flex items-center gap-2">
-          Your Cart 🛒
+        <h1 className="font-display text-2xl sm:text-3xl font-semibold text-[#1A1A1A]">
+          Your Shopping Cart
         </h1>
-        <GlassBadge className="bg-emerald-100 text-emerald-800">
+        <GlassBadge variant="success" size="sm">
           {itemCount} {itemCount === 1 ? 'item' : 'items'}
         </GlassBadge>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <AnimatePresence>
-          {items.map((item) => (
-            <motion.div
-              key={`${item.product.id}-${item.weight}`}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, x: -100, height: 0, margin: 0 }}
-              transition={{ type: 'spring', damping: 20 }}
-            >
-              <GlassCard className="p-4 flex gap-4 items-center">
-                <div className="w-16 h-16 bg-white/50 rounded-xl flex items-center justify-center text-4xl shadow-sm border border-white/60">
-                  {item.product.emoji}
-                </div>
-                
-                <div className="flex-1">
-                  <h3 className="font-semibold text-emerald-950 leading-tight">
-                    {item.product.name}
-                  </h3>
-                  {item.product.tamilName && (
-                    <p className="text-xs text-emerald-700/70">{item.product.tamilName}</p>
-                  )}
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="text-sm font-medium bg-white/50 px-2 py-0.5 rounded text-emerald-800">
-                      {item.product.unit === 'kg' ? formatWeight(item.weight) : `${item.weight} ${item.product.unit}`}
-                    </span>
-                    <span className="font-bold text-emerald-600 text-sm">
-                      {formatPrice(item.product.price * (item.weight / (item.product.unit === 'kg' ? 1000 : 1)))}
-                    </span>
+      {/* 2-column layout on laptop/desktop screens */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start">
+        {/* Left column: Cart items */}
+        <div className="md:col-span-7 lg:col-span-8 flex flex-col gap-3">
+          <AnimatePresence>
+            {items.map((item) => (
+              <motion.div
+                key={`${item.product.id}-${item.weight}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -60, height: 0, margin: 0 }}
+                transition={{ type: 'spring', damping: 24, stiffness: 300 }}
+              >
+                <GlassCard className="p-4 sm:p-5 flex gap-4 items-center">
+                  <div className="w-16 h-16 bg-[#F5F5F0] rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 border border-stone-100">
+                    {item.product.emoji}
                   </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-2">
-                  <button 
-                    onClick={() => removeItem(item.product.id)}
-                    className="p-1.5 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-100 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
                   
-                  <div className="flex items-center gap-2 bg-white/50 rounded-lg p-1 border border-white/50">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-display font-semibold text-[#1A1A1A] text-sm sm:text-base leading-tight truncate">
+                      {item.product.name}
+                    </h3>
+                    {item.product.tamilName && (
+                      <p className="text-xs text-stone-400 font-sans mt-0.5">{item.product.tamilName}</p>
+                    )}
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <span className="text-xs text-stone-500 font-sans">
+                        {formatProductWeight(item.product, item.weight)}
+                      </span>
+                      <span className="text-stone-300">·</span>
+                      <span className="font-bold text-[#B45309] text-xs sm:text-sm">
+                        {formatPrice(getItemTotalPrice(item))}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-2 bg-[#F5F5F0] rounded-xl p-1 border border-stone-200">
+                      <button 
+                        onClick={() => {
+                          if (item.quantity > 1) updateQuantity(item.product.id, item.quantity - 1)
+                          else removeItem(item.product.id)
+                        }}
+                        className="w-7 h-7 bg-white rounded-lg flex items-center justify-center text-[#14532D] shadow-sm hover:bg-stone-50 transition-colors cursor-pointer"
+                      >
+                        <Minus className="h-3.5 w-3.5" />
+                      </button>
+                      <span className="text-xs font-bold w-5 text-center text-[#1A1A1A]">{item.quantity}</span>
+                      <button 
+                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                        className="w-7 h-7 bg-white rounded-lg flex items-center justify-center text-[#14532D] shadow-sm hover:bg-stone-50 transition-colors cursor-pointer"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
                     <button 
-                      onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1))}
-                      className="w-6 h-6 bg-white rounded flex items-center justify-center text-emerald-800 shadow-sm"
+                      onClick={() => removeItem(item.product.id)}
+                      className="p-2 text-stone-300 hover:text-rose-500 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer"
                     >
-                      <Minus className="h-3 w-3" />
-                    </button>
-                    <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
-                    <button 
-                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                      className="w-6 h-6 bg-white rounded flex items-center justify-center text-emerald-800 shadow-sm"
-                    >
-                      <Plus className="h-3 w-3" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+                </GlassCard>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {/* Right column: Sticky Order Summary sidebar on desktop */}
+        <div className="md:col-span-5 lg:col-span-4 md:sticky md:top-36">
+          <GlassCard className="p-6">
+            <h3 className="font-display font-semibold text-[#1A1A1A] mb-4 text-lg">Order Summary</h3>
+            <div className="space-y-3 mb-5 text-sm font-sans">
+              <div className="flex justify-between text-stone-500">
+                <span>Items Subtotal ({itemCount})</span>
+                <span className="text-[#1A1A1A] font-medium">{formatPrice(subtotal)}</span>
+              </div>
+              <div className="flex justify-between items-center text-stone-500">
+                <span>Delivery Charge</span>
+                {isFreeDelivery ? (
+                  <GlassBadge variant="success" size="sm">FREE</GlassBadge>
+                ) : (
+                  <span className="font-bold text-[#B45309]">+{formatPrice(deliveryFee)}</span>
+                )}
+              </div>
+
+              {!isFreeDelivery && subtotal < minOrder && (
+                <p className="text-[11px] text-stone-500 font-sans bg-amber-50/70 p-2 rounded-lg border border-amber-200/60">
+                  💡 Add <span className="font-bold text-[#B45309]">{formatPrice(minOrder - subtotal)}</span> more for Free Delivery!
+                </p>
+              )}
+
+              <div className="h-px w-full bg-stone-100 my-2" />
+              <div className="flex justify-between items-baseline">
+                <span className="font-bold text-base text-[#1A1A1A]">Total Payable</span>
+                <span className="font-display font-bold text-3xl text-[#B45309]">{formatPrice(finalTotal)}</span>
+              </div>
+            </div>
+
+            <button 
+              className="w-full py-4 text-base font-bold bg-[#14532D] hover:bg-[#166534] text-white shadow-lg shadow-[#14532D]/20 rounded-xl flex items-center justify-center gap-2 transition-colors tracking-wide cursor-pointer"
+              onClick={() => router.push('/checkout')}
+            >
+              Proceed to Checkout <ArrowRight className="h-5 w-5" />
+            </button>
+            
+            <div className="mt-4 text-center">
+              <Link href="/" className="text-xs text-[#14532D] hover:text-[#166534] font-medium">
+                ← Continue Shopping
+              </Link>
+            </div>
+          </GlassCard>
+        </div>
       </div>
-
-      <GlassCard className="p-5 mt-auto">
-        <h3 className="font-semibold text-emerald-950 mb-4">Order Summary</h3>
-        <div className="space-y-2 mb-4">
-          <div className="flex justify-between text-emerald-800/80">
-            <span>Subtotal</span>
-            <span>{formatPrice(total)}</span>
-          </div>
-          <div className="flex justify-between items-center text-emerald-800/80">
-            <span>Delivery Fee</span>
-            <GlassBadge className="bg-emerald-100 text-emerald-700 border-none">FREE</GlassBadge>
-          </div>
-          <div className="h-px w-full bg-white/50 my-2" />
-          <div className="flex justify-between items-end">
-            <span className="font-bold text-lg text-emerald-950">Total</span>
-            <span className="font-bold text-2xl text-emerald-600">{formatPrice(total)}</span>
-          </div>
-        </div>
-
-        <GlassButton 
-          className="w-full py-6 text-lg font-bold bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30 shadow-lg rounded-xl flex items-center justify-center gap-2"
-          onClick={() => router.push('/checkout')}
-        >
-          Proceed to Checkout <ArrowRight className="h-5 w-5" />
-        </GlassButton>
-        
-        <div className="mt-4 text-center">
-          <Link href="/" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
-            Continue Shopping
-          </Link>
-        </div>
-      </GlassCard>
     </div>
   )
 }

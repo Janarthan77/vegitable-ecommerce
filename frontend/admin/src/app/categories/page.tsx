@@ -6,7 +6,7 @@ import { Category } from '@/types'
 import { GlassCard } from '@/components/ui/glass-card'
 import { GlassButton } from '@/components/ui/glass-button'
 import { GlassInput } from '@/components/ui/glass-input'
-import { Plus, Edit, Trash2, FolderTree, X, Check, RefreshCw } from 'lucide-react'
+import { Plus, Edit, Trash2, X, Check, RefreshCw } from 'lucide-react'
 import { fetchCategories, createCategory, updateCategory, deleteCategory } from '@/lib/api'
 import { toast } from 'sonner'
 
@@ -21,14 +21,13 @@ export default function CategoriesPage() {
   })
 
   const emojis = ['🥬', '🍅', '🧅', '🥔', '🥕', '🍆', '🧄', '🥦', '🥒', '🌶️', '🥥', '🍄', '🍋', '🍇', '🍉', '🍎']
-  const colors = ['emerald', 'orange', 'rose', 'purple', 'sky', 'yellow', 'lime']
 
   const loadCategories = async () => {
     try {
       setLoading(true)
       const data = await fetchCategories()
       setCategories(data)
-    } catch (err: any) {
+    } catch {
       toast.error('Failed to load categories')
     } finally {
       setLoading(false)
@@ -89,56 +88,58 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Categories 📁</h1>
-          <p className="text-slate-500 font-medium">Organize vegetables by category</p>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#1A1A1A]">Categories 📁</h1>
+          <p className="text-stone-500 font-sans text-sm mt-0.5">Organize farm vegetables by category and groups</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex gap-2.5 w-full sm:w-auto">
           <GlassButton onClick={loadCategories} size="sm" variant="secondary">
-            <RefreshCw size={16} className={`mr-1.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            <RefreshCw size={15} className={`mr-1.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </GlassButton>
           <GlassButton 
             onClick={() => openForm()}
-            className="bg-sky-600 hover:bg-sky-700 text-white border-sky-400 flex-1 sm:flex-none"
+            variant="primary"
+            size="sm"
+            className="flex-1 sm:flex-none"
           >
-            <Plus size={18} className="mr-1.5" /> Add Category
+            <Plus size={16} className="mr-1.5" /> Add Category
           </GlassButton>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
         <AnimatePresence mode="popLayout">
           {categories.map(category => (
             <motion.div
               layout
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ type: 'spring' as const, stiffness: 300, damping: 25 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               key={category.id}
             >
-              <GlassCard className={`p-5 flex items-center gap-4 border-l-4 border-l-sky-500 group`}>
-                <div className={`w-14 h-14 bg-sky-100 rounded-2xl flex items-center justify-center text-3xl shadow-sm shrink-0`}>
+              <GlassCard className="p-4 flex items-center gap-3.5 group">
+                <div className="w-13 h-13 bg-[#F5F5F0] rounded-xl flex items-center justify-center text-3xl shadow-sm shrink-0 border border-stone-100">
                   {category.emoji}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-slate-800 text-lg truncate">{category.name}</h3>
-                  <p className="text-sm font-medium text-slate-500 truncate">{category.tamilName}</p>
+                  <h3 className="font-display font-semibold text-[#1A1A1A] text-base truncate">{category.name}</h3>
+                  <p className="text-xs text-stone-400 font-sans truncate mt-0.5">{category.tamilName}</p>
                   {category._count && (
-                    <span className="text-xs text-sky-600 font-medium">{category._count.products} products</span>
+                    <span className="text-[11px] text-[#14532D] font-semibold font-sans">{category._count.products} products</span>
                   )}
                 </div>
-                <div className="flex flex-col gap-2 shrink-0">
+                <div className="flex flex-col gap-1 shrink-0">
                   <button 
                     onClick={() => openForm(category)}
-                    className="p-2 rounded-xl text-slate-400 hover:bg-sky-50 hover:text-sky-500 transition-colors"
+                    className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-[#14532D] transition-colors cursor-pointer"
                   >
-                    <Edit size={18} />
+                    <Edit size={16} />
                   </button>
                   <button 
                     onClick={() => handleDelete(category.id)}
-                    className="p-2 rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                    className="p-1.5 rounded-lg text-stone-400 hover:bg-rose-50 hover:text-rose-500 transition-colors cursor-pointer"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </GlassCard>
@@ -153,48 +154,58 @@ export default function CategoriesPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
           >
-            <GlassCard className="w-full max-w-md bg-white/90 p-6 relative shadow-2xl">
+            <GlassCard className="w-full max-w-md bg-white p-6 relative shadow-2xl border border-stone-200">
               <button 
                 onClick={() => setIsFormOpen(false)}
-                className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
               
-              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <h2 className="font-display text-xl font-bold text-[#1A1A1A] mb-5 flex items-center gap-2">
                 {editingCategory ? 'Edit Category' : 'Add Category'} 📁
               </h2>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-3.5">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Name (English) *</label>
                   <GlassInput 
                     required 
+                    label="Name (English) *"
                     value={formData.name || ''} 
                     onChange={e => setFormData({...formData, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})} 
                     placeholder="e.g. Root Vegetables" 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Name (Tamil) *</label>
-                  <GlassInput required value={formData.tamilName || ''} onChange={e => setFormData({...formData, tamilName: e.target.value})} placeholder="e.g. கிழங்கு வகைகள்" />
+                  <GlassInput 
+                    required 
+                    label="Name (Tamil) *"
+                    value={formData.tamilName || ''} 
+                    onChange={e => setFormData({...formData, tamilName: e.target.value})} 
+                    placeholder="e.g. கிழங்கு வகைகள்" 
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">URL Slug *</label>
-                  <GlassInput required value={formData.slug || ''} onChange={e => setFormData({...formData, slug: e.target.value})} placeholder="e.g. root-vegetables" />
+                  <GlassInput 
+                    required 
+                    label="URL Slug *"
+                    value={formData.slug || ''} 
+                    onChange={e => setFormData({...formData, slug: e.target.value})} 
+                    placeholder="e.g. root-vegetables" 
+                  />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Emoji *</label>
-                  <div className="grid grid-cols-8 gap-2 p-3 bg-white/50 rounded-xl border border-white/40">
+                  <label className="block text-xs font-semibold text-stone-600 uppercase tracking-wider mb-1.5 font-sans">Emoji Icon *</label>
+                  <div className="grid grid-cols-8 gap-1.5 p-2 bg-[#FAFAF6] rounded-xl border border-stone-200">
                     {emojis.map(e => (
                       <button
                         key={e}
                         type="button"
                         onClick={() => setFormData({...formData, emoji: e})}
-                        className={`text-xl p-1 rounded-lg transition-colors ${formData.emoji === e ? 'bg-sky-100 scale-110' : 'hover:bg-white/80'}`}
+                        className={`text-xl p-1 rounded-lg transition-all cursor-pointer ${formData.emoji === e ? 'bg-white shadow-sm scale-110' : 'hover:bg-white'}`}
                       >
                         {e}
                       </button>
@@ -202,12 +213,12 @@ export default function CategoriesPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 justify-end pt-4">
-                  <GlassButton type="button" variant="secondary" onClick={() => setIsFormOpen(false)}>
+                <div className="flex gap-2.5 justify-end pt-3">
+                  <GlassButton type="button" variant="secondary" size="sm" onClick={() => setIsFormOpen(false)}>
                     Cancel
                   </GlassButton>
-                  <GlassButton type="submit" variant="primary" className="bg-sky-600 hover:bg-sky-700 text-white border-sky-400">
-                    <Check size={18} className="mr-2" />
+                  <GlassButton type="submit" variant="primary" size="sm">
+                    <Check size={16} className="mr-1.5" />
                     Save Category
                   </GlassButton>
                 </div>

@@ -2,7 +2,6 @@
 
 import { useSearchParams, useRouter } from 'next/navigation'
 import { GlassCard } from '@/components/ui/glass-card'
-import { GlassButton } from '@/components/ui/glass-button'
 import { motion } from 'framer-motion'
 import { CheckCircle, Home, Phone } from 'lucide-react'
 import { Suspense } from 'react'
@@ -12,82 +11,49 @@ function OrderSuccessContent() {
   const router = useRouter()
   const orderId = searchParams.get('id') || 'ORD-UNKNOWN'
 
-  // Floating emojis for background decoration
-  const emojis = ['🥬', '🥕', '🍅', '🌽', '🥦', '🧅']
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 text-center relative overflow-hidden">
-      {/* Confetti emojis */}
-      {emojis.map((emoji, i) => (
-        <motion.div
-          key={i}
-          className="absolute text-4xl opacity-50 z-0 pointer-events-none"
-          initial={{ 
-            x: Math.random() * window.innerWidth - window.innerWidth / 2, 
-            y: window.innerHeight / 2 + 100,
-            rotate: 0,
-            opacity: 0
-          }}
-          animate={{ 
-            y: -window.innerHeight / 2 - 100,
-            rotate: Math.random() * 360,
-            opacity: [0, 1, 1, 0]
-          }}
-          transition={{ 
-            duration: 5 + Math.random() * 5, 
-            repeat: Infinity,
-            delay: Math.random() * 2,
-            ease: "linear" 
-          }}
-          style={{
-            left: `${10 + Math.random() * 80}%`
-          }}
-        >
-          {emoji}
-        </motion.div>
-      ))}
-
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <motion.div
-        initial={{ scale: 0, opacity: 0 }}
+        initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-        className="z-10 flex flex-col items-center"
+        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+        className="flex flex-col items-center w-full max-w-sm"
       >
-        <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-emerald-500/20 border-4 border-white">
-          <CheckCircle className="w-12 h-12 text-emerald-500" />
+        <div className="w-20 h-20 bg-[#DCFCE7] rounded-full flex items-center justify-center mb-5 shadow-lg shadow-[#14532D]/10 border-4 border-white">
+          <CheckCircle className="w-10 h-10 text-[#14532D]" />
         </div>
 
-        <h1 className="text-3xl font-bold text-emerald-950 mb-2">
-          Order Placed! 🎉
+        <h1 className="font-display text-3xl font-bold text-[#1A1A1A] mb-2">
+          Order Placed!
         </h1>
         
-        <p className="text-emerald-700/80 mb-8 max-w-sm">
-          Thank you for your order! We will contact you shortly to confirm your delivery details.
+        <p className="text-stone-500 text-sm mb-6 max-w-xs leading-relaxed font-sans">
+          Thank you for choosing Kaikaari! We are preparing your fresh vegetables for fast delivery.
         </p>
 
-        <GlassCard className="p-6 mb-8 w-full max-w-sm bg-white/60">
-          <p className="text-sm text-emerald-800/60 mb-1">Order Reference</p>
-          <p className="text-xl font-mono font-bold text-emerald-900 tracking-wider">
+        <GlassCard className="p-5 mb-6 w-full text-center">
+          <p className="text-xs text-stone-400 font-sans uppercase tracking-wider mb-1">Order Reference</p>
+          <p className="font-display text-xl font-bold text-[#14532D] tracking-wider">
             {orderId}
           </p>
         </GlassCard>
 
-        <div className="flex flex-col w-full max-w-sm gap-3">
-          <GlassButton 
+        <div className="flex flex-col w-full gap-2.5">
+          <button 
             onClick={() => router.push('/')}
-            className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-[#14532D] hover:bg-[#166534] text-white font-bold text-sm rounded-xl shadow-md shadow-[#14532D]/20 flex items-center justify-center gap-2 transition-colors"
           >
-            <Home className="h-5 w-5" />
+            <Home className="h-4 w-4" />
             Back to Home
-          </GlassButton>
+          </button>
           
-          <GlassButton 
+          <button 
             onClick={() => window.location.href = 'tel:+919876543210'}
-            className="w-full py-4 bg-white hover:bg-white/80 text-emerald-700 font-bold border border-emerald-100 flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-white hover:bg-stone-50 text-[#14532D] font-bold text-sm border border-stone-200 rounded-xl flex items-center justify-center gap-2 transition-colors"
           >
-            <Phone className="h-5 w-5" />
-            Call Shop
-          </GlassButton>
+            <Phone className="h-4 w-4" />
+            Call Store
+          </button>
         </div>
       </motion.div>
     </div>
@@ -96,7 +62,7 @@ function OrderSuccessContent() {
 
 export default function OrderSuccessPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-emerald-500">Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-24 text-[#14532D]">Loading...</div>}>
       <OrderSuccessContent />
     </Suspense>
   )

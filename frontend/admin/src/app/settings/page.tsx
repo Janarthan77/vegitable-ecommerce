@@ -1,40 +1,112 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { GlassCard } from '@/components/ui/glass-card'
 import { GlassButton } from '@/components/ui/glass-button'
 import { GlassInput } from '@/components/ui/glass-input'
-import { Store, Phone, MapPin, Clock, Save, LogOut, Cloud, ShieldCheck } from 'lucide-react'
+import { Store, MapPin, Clock, Save, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAdmin } from '@/lib/store/use-admin'
 import { useRouter } from 'next/navigation'
+import { WorkingHoursPicker, WorkingHoursData } from '@/components/admin/working-hours-picker'
+import { fetchStoreSettings, updateStoreSettings } from '@/lib/api'
 
 export default function SettingsPage() {
-  const { shopName, logout } = useAdmin()
+  const { shopName, setAuth, logout } = useAdmin()
   const router = useRouter()
+  const [loading, setLoading] = useState(false)
 
   const [formData, setFormData] = useState({
-    shopName: shopName || 'Fresh Veggies 🥬',
+    shopName: shopName || 'Kaikaari 🥬',
     phone: '+91 98765 43210',
     address: '123 Anna Salai, Chennai, TN 600002',
     deliveryRadius: '10',
     minOrder: '100',
     deliveryCharge: '0',
-    openTime: '06:00',
-    closeTime: '21:00',
-    // Cloudflare R2 Settings
-    cfAccountId: 'your_cloudflare_account_id',
-    cfBucketName: 'vegetable-shop-images',
-    cfPublicDomain: 'https://pub-vegetables.r2.dev',
   })
 
+  const [workingHours, setWorkingHours] = useState<WorkingHoursData>({
+    openHour: '06',
+    openMinute: '00',
+    openPeriod: 'AM',
+    closeHour: '09',
+    closeMinute: '00',
+    closePeriod: 'PM',
+    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  })
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await fetchStoreSettings()
+        if (data) {
+          if (data.shop_profile || data.delivery_settings) {
+            setFormData(prev => ({
+              ...prev,
+              ...(data.shop_profile || {}),
+              ...(data.delivery_settings || {}),
+            }))
+          }
+          if (data.working_hours) {
+            setWorkingHours(data.working_hours)
+          }
+          return
+        }
+      } catch (err) {
+        console.warn('API settings load failed, trying localStorage fallback', err)
+      }
+
+      // LocalStorage fallback
+      try {
+        const savedTimings = localStorage.getItem('veggie_store_timings')
+        if (savedTimings) setWorkingHours(JSON.parse(savedTimings))
+        const savedProfile = localStorage.getItem('veggie_store_profile')
+        if (savedProfile) setFormData(JSON.parse(savedProfile))
+      } catch {
+        // default
+      }
+    }
+
+    load()
+  }, [])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  const handleSave = () => {
-    toast.success('Settings and Cloudflare preferences saved!')
+  const handleSave = async () => {
+    try {
+      setLoading(true)
+      const payload = {
+        shop_profile: {
+          shopName: formData.shopName,
+          phone: formData.phone,
+          address: formData.address,
+        },
+        delivery_settings: {
+          deliveryRadius: formData.deliveryRadius,
+          minOrder: formData.minOrder,
+          deliveryCharge: formData.deliveryCharge,
+        },
+        working_hours: workingHours,
+      }
+
+      await updateStoreSettings(payload)
+      localStorage.setItem('veggie_store_timings', JSON.stringify(workingHours))
+      localStorage.setItem('veggie_store_profile', JSON.stringify(formData))
+
+      setAuth('admin_active_token', formData.shopName)
+      toast.success('Delivery & Store settings updated successfully in Database!')
+    } catch (err: any) {
+      console.error('Settings save error:', err)
+      // Save locally as backup
+      localStorage.setItem('veggie_store_timings', JSON.stringify(workingHours))
+      localStorage.setItem('veggie_store_profile', JSON.stringify(formData))
+      toast.error(`Database error: ${err.message || 'API connection failed'}`)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleLogout = () => {
@@ -46,143 +118,107 @@ export default function SettingsPage() {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }
+      transition: { staggerChildren: 0.08 }
     }
   }
 
   const item = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 15 },
     show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } }
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 max-w-4xl">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 w-full">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Store Settings ⚙️</h1>
-        <p className="text-slate-500 font-medium">Manage store information and Cloudflare image storage</p>
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#1A1A1A]">Store Settings ⚙️</h1>
+        <p className="text-stone-500 font-sans text-sm mt-0.5">
+          Manage your vegetable store profile, AM/PM operational timings, operating days, and delivery guidelines
+        </p>
       </div>
 
-      {/* Cloudflare Configuration Section */}
+      {/* ── Shop Info Card ─────────────────────────── */}
       <motion.div variants={item}>
-        <GlassCard className="p-6 border-l-4 border-l-sky-500">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-sky-100 text-sky-600 rounded-xl">
-                <Cloud size={22} />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-800">Cloudflare Image Storage (R2)</h2>
-                <p className="text-xs text-slate-500">Only image URLs are stored in database; files stream to Cloudflare</p>
-              </div>
-            </div>
-            <span className="flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-semibold">
-              <ShieldCheck size={14} /> Active
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">R2 Account ID</label>
-              <GlassInput name="cfAccountId" value={formData.cfAccountId} onChange={handleChange} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">R2 Bucket Name</label>
-              <GlassInput name="cfBucketName" value={formData.cfBucketName} onChange={handleChange} />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Public CDN Domain URL</label>
-              <GlassInput name="cfPublicDomain" value={formData.cfPublicDomain} onChange={handleChange} placeholder="https://pub-xxxx.r2.dev" />
-            </div>
-          </div>
-        </GlassCard>
-      </motion.div>
-
-      <motion.div variants={item}>
-        <GlassCard className="p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 bg-sky-100 text-sky-600 rounded-xl">
+        <GlassCard className="p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2.5 bg-emerald-50 text-[#14532D] rounded-xl shadow-sm">
               <Store size={20} />
             </div>
-            <h2 className="text-xl font-bold text-slate-800">Shop Information</h2>
+            <h2 className="font-display text-lg font-bold text-[#1A1A1A]">Shop Information</h2>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Shop Name</label>
-              <GlassInput name="shopName" value={formData.shopName} onChange={handleChange} />
+              <GlassInput label="Shop Name" name="shopName" value={formData.shopName} onChange={handleChange} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
-              <GlassInput name="phone" value={formData.phone} onChange={handleChange} />
+              <GlassInput label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
-              <GlassInput name="address" value={formData.address} onChange={handleChange} />
+              <GlassInput label="Shop Address" name="address" value={formData.address} onChange={handleChange} />
             </div>
           </div>
         </GlassCard>
       </motion.div>
 
-      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <GlassCard className="p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
-              <MapPin size={20} />
-            </div>
-            <h2 className="text-xl font-bold text-slate-800">Delivery Settings</h2>
-          </div>
-          
-          <div className="space-y-4">
+      <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* ── Working Hours Card (AM/PM & Days) ─────── */}
+        <div className="lg:col-span-7">
+          <GlassCard className="p-5 sm:p-6 h-full flex flex-col justify-between">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Delivery Radius (km)</label>
-              <GlassInput type="number" name="deliveryRadius" value={formData.deliveryRadius} onChange={handleChange} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Minimum Order Amount (₹)</label>
-              <GlassInput type="number" name="minOrder" value={formData.minOrder} onChange={handleChange} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Delivery Charge (₹, 0 for Free)</label>
-              <GlassInput type="number" name="deliveryCharge" value={formData.deliveryCharge} onChange={handleChange} />
-            </div>
-          </div>
-        </GlassCard>
-
-        <div className="space-y-6">
-          <GlassCard className="p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 bg-orange-100 text-orange-600 rounded-xl">
-                <Clock size={20} />
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2.5 bg-orange-50 text-orange-800 rounded-xl shadow-sm">
+                  <Clock size={20} />
+                </div>
+                <div>
+                  <h2 className="font-display text-lg font-bold text-[#1A1A1A]">Working Hours & Operating Days</h2>
+                  <p className="text-xs text-stone-400 font-sans">Set exact store opening and closing times in 12-hour AM/PM format</p>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-slate-800">Working Hours</h2>
+
+              <WorkingHoursPicker value={workingHours} onChange={setWorkingHours} />
+            </div>
+          </GlassCard>
+        </div>
+
+        {/* ── Delivery Settings & Actions ─────────────── */}
+        <div className="lg:col-span-5 space-y-6">
+          <GlassCard className="p-5 sm:p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-2.5 bg-amber-50 text-amber-800 rounded-xl shadow-sm">
+                <MapPin size={20} />
+              </div>
+              <h2 className="font-display text-lg font-bold text-[#1A1A1A]">Delivery Settings</h2>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3.5">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Opening Time</label>
-                <GlassInput type="time" name="openTime" value={formData.openTime} onChange={handleChange} />
+                <GlassInput label="Delivery Radius (km)" type="number" name="deliveryRadius" value={formData.deliveryRadius} onChange={handleChange} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Closing Time</label>
-                <GlassInput type="time" name="closeTime" value={formData.closeTime} onChange={handleChange} />
+                <GlassInput label="Minimum Order Amount (₹)" type="number" name="minOrder" value={formData.minOrder} onChange={handleChange} />
+              </div>
+              <div>
+                <GlassInput label="Delivery Charge (₹, 0 for Free)" type="number" name="deliveryCharge" value={formData.deliveryCharge} onChange={handleChange} />
               </div>
             </div>
           </GlassCard>
 
-          <GlassCard className="p-6">
-            <div className="flex flex-col gap-3">
+          <GlassCard className="p-5">
+            <div className="flex flex-col gap-2.5">
               <GlassButton 
                 onClick={handleSave}
-                className="w-full bg-sky-600 hover:bg-sky-700 text-white border-sky-400 py-3 text-base font-semibold"
+                disabled={loading}
+                variant="primary"
+                className="w-full py-3.5 text-sm font-semibold tracking-wide shadow-md"
               >
-                <Save size={20} className="mr-2" /> Save All Settings
+                <Save size={18} className="mr-2" /> {loading ? 'Saving Settings...' : 'Save All Settings'}
               </GlassButton>
               
               <button 
                 onClick={handleLogout}
-                className="w-full py-2.5 flex items-center justify-center gap-2 text-rose-500 font-medium hover:bg-rose-50 rounded-xl transition-colors text-sm"
+                className="w-full py-2.5 flex items-center justify-center gap-2 text-rose-600 font-semibold hover:bg-rose-50 rounded-xl transition-colors text-xs cursor-pointer"
               >
-                <LogOut size={16} /> Logout from Admin
+                <LogOut size={15} /> Logout from Admin
               </button>
             </div>
           </GlassCard>

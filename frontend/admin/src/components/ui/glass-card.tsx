@@ -4,12 +4,12 @@ import { motion } from 'framer-motion'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-interface GlassCardProps {
+interface PremiumCardProps {
   children: ReactNode
   className?: string
   onClick?: () => void
   hover?: boolean
-  padding?: 'sm' | 'md' | 'lg'
+  padding?: 'none' | 'sm' | 'md' | 'lg'
 }
 
 export function GlassCard({
@@ -18,25 +18,21 @@ export function GlassCard({
   onClick,
   hover = true,
   padding = 'md',
-}: GlassCardProps) {
+}: PremiumCardProps) {
   const paddingClasses = {
+    none: '',
     sm: 'p-3',
-    md: 'p-4',
+    md: 'p-4 sm:p-5',
     lg: 'p-6',
   }
 
   return (
     <motion.div
       onClick={onClick}
-      whileHover={hover ? { scale: 1.02 } : {}}
-      whileTap={hover ? { scale: 0.98 } : {}}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className={cn(
-        'bg-white/40 backdrop-blur-xl border border-white/30 rounded-2xl shadow-lg shadow-black/5',
-        paddingClasses[padding],
-        onClick && 'cursor-pointer',
-        className
-      )}
+      whileHover={hover ? { y: -1.5 } : {}}
+      whileTap={hover && onClick ? { scale: 0.99 } : {}}
+      transition={{ type: 'spring', stiffness: 340, damping: 26 }}
+      className={cn('card', paddingClasses[padding], onClick && 'cursor-pointer', className)}
     >
       {children}
     </motion.div>

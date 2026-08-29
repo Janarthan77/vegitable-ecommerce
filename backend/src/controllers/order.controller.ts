@@ -107,3 +107,13 @@ export async function getDashboardStats(_req: Request, res: Response): Promise<v
     res.status(500).json({ error: 'Failed to fetch dashboard stats', details: error.message });
   }
 }
+
+export async function deleteOrder(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    await prisma.order.delete({ where: { id } });
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to delete order', details: error.message });
+  }
+}

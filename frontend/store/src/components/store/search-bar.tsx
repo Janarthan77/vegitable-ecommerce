@@ -8,94 +8,115 @@ import Link from 'next/link'
 import { formatPrice } from '@/lib/utils'
 
 export function SearchBar() {
-  const [query, setQuery] = useState('')
+  const [query, setQuery]   = useState('')
   const [isOpen, setIsOpen] = useState(false)
+  const [focused, setFocused] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
-  
+
   const results = useMemo(() => {
     if (query.trim().length < 2) return []
-    return searchProducts(query).slice(0, 5)
+    return searchProducts(query).slice(0, 6)
   }, [query])
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+    function onOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setIsOpen(false)
+        setFocused(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('mousedown', onOutside)
+    return () => document.removeEventListener('mousedown', onOutside)
   }, [])
 
   return (
-    <div ref={wrapperRef} className="relative w-full z-40">
-      <div className="relative flex items-center w-full h-12 rounded-2xl bg-white/40 backdrop-blur-lg border border-white/30 overflow-hidden shadow-inner focus-within:ring-2 focus-within:ring-emerald-500/50 transition-all">
-        <div className="grid place-items-center h-full w-12 text-gray-500">
-          <Search className="h-5 w-5" />
+    <div ref={wrapperRef} className="relative w-full">
+      {/* Input */}
+      <div
+        className="flex items-center w-full h-12 rounded-xl overflow-hidden transition-all duration-200"
+        style={{
+          background: '#ffffff',
+          border: `1.5px solid ${focused ? '#14532D' : '#E7E5E4'}`,
+          boxShadow: focused ? '0 0 0 3px rgba(20,83,45,0.08)' : '0 1px 4px rgba(0,0,0,0.04)',
+        }}
+      >
+        <div className="grid place-items-center w-12 h-full flex-shrink-0">
+          <Search className="w-4 h-4 text-stone-400" />
         </div>
         <input
-          className="peer h-full w-full outline-none text-sm text-gray-700 bg-transparent pr-2"
+          className="h-full w-full outline-none text-sm text-[#1A1A1A] bg-transparent placeholder:text-stone-400 font-sans font-medium pr-2"
           type="text"
-          id="search"
-          placeholder="Search vegetables..."
+          placeholder="Search vegetables, herbs..."
           value={query}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setIsOpen(true)
-          }}
-          onFocus={() => setIsOpen(true)}
+          onChange={(e) => { setQuery(e.target.value); setIsOpen(true) }}
+          onFocus={() => { setFocused(true); setIsOpen(true) }}
         />
-        {query && (
-          <button 
-            onClick={() => {
-              setQuery('')
-              setIsOpen(false)
-            }}
-            className="grid place-items-center h-full w-12 text-gray-400 hover:text-gray-600"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+        <AnimatePresence>
+          {query && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.7 }}
+              transition={{ duration: 0.12 }}
+              onClick={() => { setQuery(''); setIsOpen(false) }}
+              className="grid place-items-center w-10 h-full flex-shrink-0 text-stone-400 hover:text-stone-600"
+            >
+              <X className="w-4 h-4" />
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
+      {/* Dropdown */}
       <AnimatePresence>
         {isOpen && results.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-white/80 backdrop-blur-xl border border-white/30 rounded-2xl shadow-xl overflow-hidden"
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden z-50 border border-stone-100"
           >
-            <ul className="py-2">
-              {results.map((product) => (
-                <li key={product.id}>
-                  <Link 
-                    href={`/product/${product.id}`}
-                    onClick={() => {
-                      setIsOpen(false)
-                      setQuery('')
-                    }}
-                    className="flex items-center gap-3 px-4 py-2 hover:bg-white/50 transition-colors"
-                  >
-                    <span className="text-2xl">{product.emoji}</span>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-gray-800">{product.name}</span>
-                      <span className="text-xs text-emerald-600 font-medium">{formatPrice(product.price)}</span>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {results.map((product, idx) => (
+              <Link
+                key={product.id}
+                href={`/product/${product.id}`}
+                onClick={() => { setIsOpen(false); setQuery('') }}
+                className={`flex items-center gap-3 px-4 py-3 hover:bg-[#FAFAF6] transition-colors ${
+                  idx < results.length - 1 ? 'border-b border-stone-50' : ''
+                }`}
+              >
+                <div className="w-9 h-9 rounded-xl bg-[#F5F5F0] flex items-center justify-center text-xl flex-shrink-0 overflow-hidden">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                  ) : (
+                    product.emoji
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display text-sm font-semibold text-[#1A1A1A] truncate">{product.name}</p>
+                  {product.tamilName && (
+                    <p className="text-[10px] text-stone-400 font-sans">{product.tamilName}</p>
+                  )}
+                </div>
+                <span className="text-sm font-bold text-[#B45309] flex-shrink-0">
+                  {formatPrice(product.price)}
+                </span>
+              </Link>
+            ))}
           </motion.div>
         )}
+
         {isOpen && query.length >= 2 && results.length === 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-white/80 backdrop-blur-xl border border-white/30 rounded-2xl shadow-xl overflow-hidden p-6 text-center text-gray-500 text-sm"
+            exit={{ opacity: 0, y: 6 }}
+            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border border-stone-100 p-6 text-center"
           >
-            No vegetables found for "{query}"
+            <p className="text-3xl mb-2">🔍</p>
+            <p className="font-display text-sm font-semibold text-[#1A1A1A]">No results for "{query}"</p>
+            <p className="text-xs text-stone-400 mt-1">Try searching in Tamil or English</p>
           </motion.div>
         )}
       </AnimatePresence>

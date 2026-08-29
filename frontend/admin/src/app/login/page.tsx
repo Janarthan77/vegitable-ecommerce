@@ -6,7 +6,7 @@ import { GlassCard } from '@/components/ui/glass-card'
 import { GlassButton } from '@/components/ui/glass-button'
 import { GlassInput } from '@/components/ui/glass-input'
 import { motion } from 'framer-motion'
-import { Lock, Eye, EyeOff } from 'lucide-react'
+import { Lock, Eye, EyeOff, Leaf, ArrowLeft, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { adminLogin } from '@/lib/api'
 import { useAdmin } from '@/lib/store/use-admin'
@@ -40,61 +40,105 @@ export default function LoginPage() {
     }
   }
 
+  const fillDemoPassword = () => {
+    setPassword('admin123')
+    toast.info('Demo password filled: admin123')
+  }
+
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4">
+    <div className="w-full flex flex-col items-center justify-center py-8 sm:py-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring' as const, stiffness: 300, damping: 25 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 26 }}
         className="w-full max-w-md"
       >
-        <GlassCard className="p-8 backdrop-blur-2xl bg-white/80 shadow-2xl border border-white/60">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-sky-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl shadow-sm">
-              🥬
+        <GlassCard className="p-6 sm:p-9 bg-white shadow-2xl border border-stone-200/80 rounded-2xl">
+          {/* Logo & Header */}
+          <div className="text-center mb-7">
+            <div className="w-16 h-16 bg-[#DCFCE7] rounded-2xl flex items-center justify-center mx-auto mb-3.5 text-[#14532D] shadow-sm border border-emerald-200/60">
+              <Leaf size={32} />
             </div>
-            <h1 className="text-2xl font-bold text-slate-800">Admin Portal</h1>
-            <p className="text-slate-500 text-sm mt-1">கடை நிர்வாக மேலாண்மை</p>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-[#1A1A1A]">
+              Admin Portal
+            </h1>
+            <p className="text-stone-500 text-xs sm:text-sm font-sans mt-1">
+              கடை நிர்வாக மேலாண்மை • Store Management
+            </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          {/* Form */}
+          <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Admin Secret Password
-              </label>
               <div className="relative">
                 <GlassInput
+                  label="Admin Secret Password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password (default: admin123)"
-                  icon={<Lock size={18} />}
+                  icon={<Lock size={16} />}
                   required
+                  autoFocus
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3.5 top-9 text-stone-400 hover:text-stone-600 cursor-pointer p-1 rounded-md"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
             <GlassButton
               type="submit"
+              variant="primary"
               fullWidth
-              className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3"
+              className="py-3.5 text-sm font-semibold tracking-wide shadow-md shadow-[#14532D]/20 cursor-pointer"
               disabled={loading}
             >
-              {loading ? 'Logging in...' : 'Enter Admin Panel'}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Authenticating...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <ShieldCheck size={18} />
+                  Enter Admin Panel
+                </span>
+              )}
             </GlassButton>
 
-            <p className="text-center text-xs text-slate-400">
-              Demo access: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">admin123</code>
-            </p>
+            {/* Demo access pill */}
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={fillDemoPassword}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/80 hover:bg-stone-200/70 text-[11px] text-stone-600 font-sans transition-colors cursor-pointer border border-stone-200/60"
+              >
+                <span>Demo Password:</span>
+                <code className="font-mono font-bold text-[#14532D]">admin123</code>
+                <span className="text-[10px] text-stone-400">(Click to Fill)</span>
+              </button>
+            </div>
           </form>
         </GlassCard>
+
+        {/* Back to store navigation link */}
+        <div className="mt-6 text-center">
+          <a
+            href="http://localhost:3000"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-stone-500 hover:text-[#14532D] transition-colors py-1 px-3 rounded-lg hover:bg-white/60"
+          >
+            <ArrowLeft size={14} />
+            <span>Go to Customer Storefront (localhost:3000)</span>
+          </a>
+        </div>
       </motion.div>
     </div>
   )

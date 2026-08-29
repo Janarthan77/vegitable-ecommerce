@@ -353,38 +353,7 @@ async function seed() {
     });
   }
 
-  // Create 2 sample orders
-  console.log('🛍️ Adding sample customer orders...');
-  const sampleProducts = await prisma.product.findMany({ take: 3 });
-  if (sampleProducts.length >= 2) {
-    await prisma.order.create({
-      data: {
-        customerName: 'Karthik Raja',
-        customerPhone: '+91 98765 43210',
-        customerAddress: 'No 45, Gandhi Street, T.Nagar, Chennai',
-        notes: 'Please deliver before 8 AM',
-        status: 'pending',
-        total: sampleProducts[0].price * 2 + sampleProducts[1].price,
-        items: JSON.stringify([
-          { product: sampleProducts[0], quantity: 2, weight: 1000 },
-          { product: sampleProducts[1], quantity: 1, weight: 500 },
-        ]),
-      },
-    });
-
-    await prisma.order.create({
-      data: {
-        customerName: 'Meena Sundaram',
-        customerPhone: '+91 98765 43211',
-        customerAddress: 'Flat 3B, Green Meadows, Anna Nagar, Chennai',
-        status: 'preparing',
-        total: sampleProducts[1].price * 3,
-        items: JSON.stringify([
-          { product: sampleProducts[1], quantity: 3, weight: 1000 },
-        ]),
-      },
-    });
-  }
+  console.log('✅ Database seeded successfully!');
 
   console.log('✅ Database seeded successfully!');
 }

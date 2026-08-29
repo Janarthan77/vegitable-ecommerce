@@ -44,16 +44,18 @@ export function WeightSelector({ selectedWeight, onWeightChange, unit = 'kg' }: 
             key={option.label}
             onClick={() => onWeightChange(option.grams)}
             className={cn(
-              'relative px-4 py-2 rounded-xl text-sm font-medium transition-colors',
-              isSelected ? 'text-white' : 'bg-white/40 backdrop-blur-sm border border-white/30 text-gray-700 hover:bg-white/60'
+              'relative px-4 py-2 rounded-xl text-sm font-semibold transition-all',
+              isSelected
+                ? 'text-white shadow-sm shadow-[#14532D]/20'
+                : 'bg-white border border-stone-200 text-stone-700 hover:border-stone-300 hover:bg-stone-50'
             )}
           >
             {isSelected && (
               <motion.div
                 layoutId="weight-indicator"
-                className="absolute inset-0 bg-emerald-500 rounded-xl -z-10"
+                className="absolute inset-0 bg-[#14532D] rounded-xl -z-10"
                 initial={false}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                transition={{ type: 'spring', stiffness: 340, damping: 24 }}
               />
             )}
             {option.label}

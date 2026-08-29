@@ -7,7 +7,7 @@ import { GlassCard } from '@/components/ui/glass-card'
 import { GlassButton } from '@/components/ui/glass-button'
 import { GlassBadge } from '@/components/ui/glass-badge'
 import { ProductForm } from '@/components/admin/product-form'
-import { Plus, Search, Edit, Trash2, Package, Cloud, RefreshCw } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Package, RefreshCw } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import {
   fetchProducts,
@@ -89,7 +89,7 @@ export default function ProductsPage() {
       } else {
         const created = await createProduct(formData)
         setProducts(prev => [created, ...prev])
-        toast.success('New product saved with Cloudflare image URL!')
+        toast.success('New product saved successfully!')
       }
       setIsFormOpen(false)
       setEditingProduct(undefined)
@@ -102,38 +102,44 @@ export default function ProductsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Vegetable Products 📦</h1>
-          <p className="text-slate-500 font-medium">Manage vegetable prices, stock, and Cloudflare images</p>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#1A1A1A]">Vegetable Products 📦</h1>
+          <p className="text-stone-500 font-sans text-sm mt-0.5">Manage vegetable inventory, pricing, and produce stock</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex gap-2.5 w-full sm:w-auto">
           <GlassButton onClick={loadData} size="sm" variant="secondary">
-            <RefreshCw size={16} className={`mr-1.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            <RefreshCw size={15} className={`mr-1.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </GlassButton>
           <GlassButton 
             onClick={() => { setEditingProduct(undefined); setIsFormOpen(true) }}
-            className="bg-sky-600 hover:bg-sky-700 text-white border-sky-400 flex-1 sm:flex-none"
+            variant="primary"
+            size="sm"
+            className="flex-1 sm:flex-none"
           >
-            <Plus size={18} className="mr-1.5" /> Add Product
+            <Plus size={16} className="mr-1.5" /> Add Product
           </GlassButton>
         </div>
       </div>
 
-      <GlassCard className="p-3 sm:p-4">
-        <div className="flex flex-col md:flex-row gap-4">
+      <GlassCard className="p-3.5 sm:p-4">
+        <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={17} />
             <input 
               type="text" 
               placeholder="Search products by English or Tamil name..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/40 bg-white/50 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all text-sm text-slate-800"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 bg-white focus:outline-none focus:border-[#14532D] focus:ring-2 focus:ring-[#14532D]/10 transition-all text-sm text-[#1A1A1A] placeholder:text-stone-400"
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+          <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0">
             <button
               onClick={() => setSelectedCategory('all')}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${selectedCategory === 'all' ? 'bg-sky-100 text-sky-700 border border-sky-200' : 'bg-white/50 text-slate-600 border border-white/40 hover:bg-white/80'}`}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                selectedCategory === 'all' 
+                  ? 'bg-[#14532D] text-white shadow-sm' 
+                  : 'bg-white text-stone-600 border border-stone-200 hover:border-stone-300 hover:bg-stone-50'
+              }`}
             >
               All Items
             </button>
@@ -141,7 +147,11 @@ export default function ProductsPage() {
               <button
                 key={c.id}
                 onClick={() => setSelectedCategory(c.slug)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${selectedCategory === c.slug ? 'bg-sky-100 text-sky-700 border border-sky-200' : 'bg-white/50 text-slate-600 border border-white/40 hover:bg-white/80'}`}
+                className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  selectedCategory === c.slug 
+                    ? 'bg-[#14532D] text-white shadow-sm' 
+                    : 'bg-white text-stone-600 border border-stone-200 hover:border-stone-300 hover:bg-stone-50'
+                }`}
               >
                 <span>{c.emoji}</span> {c.name}
               </button>
@@ -150,21 +160,21 @@ export default function ProductsPage() {
         </div>
       </GlassCard>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
         <AnimatePresence mode="popLayout">
           {filteredProducts.map(product => (
             <motion.div
               layout
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ type: 'spring' as const, stiffness: 300, damping: 25 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               key={product.id}
             >
-              <GlassCard className="p-4 flex flex-col h-full border-t-4 border-t-transparent hover:border-t-sky-400 transition-all group">
+              <GlassCard className="p-4 flex flex-col h-full hover:border-[#14532D]/30 transition-all group">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 bg-white/70 rounded-xl flex items-center justify-center overflow-hidden shadow-sm border border-white/60 shrink-0 relative">
+                    <div className="w-13 h-13 bg-[#F5F5F0] rounded-xl flex items-center justify-center overflow-hidden border border-stone-100 shrink-0 relative">
                       {product.imageUrl ? (
                         <img
                           src={product.imageUrl}
@@ -179,48 +189,47 @@ export default function ProductsPage() {
                       )}
                     </div>
                     <div>
-                      <h3 className="font-bold text-slate-800 line-clamp-1 flex items-center gap-1">
+                      <h3 className="font-display font-semibold text-[#1A1A1A] text-sm line-clamp-1">
                         {product.name}
-                        {product.imageUrl && (
-                          <span title="Cloudflare Image URL active">
-                            <Cloud size={12} className="text-sky-500" />
-                          </span>
-                        )}
                       </h3>
-                      <p className="text-xs font-medium text-slate-500">{product.tamilName}</p>
+                      <p className="text-xs font-medium text-stone-400 font-sans mt-0.5">{product.tamilName}</p>
                     </div>
                   </div>
-                  <GlassBadge variant={product.inStock ? 'success' : 'danger'}>
+                  <GlassBadge variant={product.inStock ? 'success' : 'danger'} size="sm">
                     {product.inStock ? 'In Stock' : 'Out of Stock'}
                   </GlassBadge>
                 </div>
 
-                <div className="mt-auto pt-4 flex items-center justify-between border-t border-slate-100/50">
+                <div className="mt-auto pt-3.5 flex items-center justify-between border-t border-stone-100">
                   <div>
-                    <span className="font-bold text-slate-800 text-lg">{formatPrice(product.price)}</span>
-                    <span className="text-xs text-slate-500 ml-1">/ {product.unit}</span>
+                    <span className="font-display font-bold text-[#B45309] text-base">{formatPrice(product.price)}</span>
+                    <span className="text-xs text-stone-400 ml-1 font-sans">/ {product.unit}</span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5">
                     <button 
                       onClick={() => handleToggleStock(product.id)}
-                      className={`p-1.5 rounded-lg transition-colors ${product.inStock ? 'text-slate-400 hover:bg-rose-50 hover:text-rose-500' : 'text-slate-400 hover:bg-emerald-50 hover:text-emerald-500'}`}
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                        product.inStock 
+                          ? 'text-stone-400 hover:bg-rose-50 hover:text-rose-500' 
+                          : 'text-stone-400 hover:bg-emerald-50 hover:text-[#14532D]'
+                      }`}
                       title={product.inStock ? 'Mark Out of Stock' : 'Mark In Stock'}
                     >
-                      <Package size={18} />
+                      <Package size={17} />
                     </button>
                     <button 
                       onClick={() => { setEditingProduct(product); setIsFormOpen(true) }}
-                      className="p-1.5 rounded-lg text-slate-400 hover:bg-sky-50 hover:text-sky-500 transition-colors"
-                      title="Edit Product & Cloudflare Photo"
+                      className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-[#14532D] transition-colors cursor-pointer"
+                      title="Edit Product"
                     >
-                      <Edit size={18} />
+                      <Edit size={17} />
                     </button>
                     <button 
                       onClick={() => handleDelete(product.id)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                      className="p-1.5 rounded-lg text-stone-400 hover:bg-rose-50 hover:text-rose-500 transition-colors cursor-pointer"
                       title="Delete Product"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={17} />
                     </button>
                   </div>
                 </div>
@@ -231,9 +240,9 @@ export default function ProductsPage() {
       </div>
 
       {filteredProducts.length === 0 && !loading && (
-        <div className="text-center py-12 text-slate-500">
-          <Package size={48} className="mx-auto mb-4 opacity-20" />
-          <p>No products found matching your filter.</p>
+        <div className="text-center py-12 text-stone-400">
+          <Package size={42} className="mx-auto mb-3 opacity-30 text-[#14532D]" />
+          <p className="font-sans text-sm">No products found matching your filter.</p>
         </div>
       )}
 

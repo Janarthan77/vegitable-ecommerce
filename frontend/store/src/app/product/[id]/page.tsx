@@ -8,28 +8,63 @@ import { GlassBadge } from '@/components/ui/glass-badge'
 import { GlassCard } from '@/components/ui/glass-card'
 import { useCart } from '@/lib/store/use-cart'
 import { getProductById, getProductsByCategory } from '@/lib/data/products'
-import { formatPrice, formatWeight } from '@/lib/utils'
+import { formatPrice } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { ArrowLeft, ShoppingBag, Share2, Heart, Plus, Minus } from 'lucide-react'
+import { ArrowLeft, ShoppingBag, Share2, Heart, Plus, Minus, Truck, ShieldCheck, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
-import Link from 'next/link'
 import { VegetableCard } from '@/components/store/vegetable-card'
+
+import { fetchProductById } from '@/lib/api'
+import { Product } from '@/types'
+import { useEffect } from 'react'
 
 export default function ProductDetailPage() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
-  const product = getProductById(id)
+  const [product, setProduct] = useState<Product | null>(() => getProductById(id) || null)
+  const [loading, setLoading] = useState(!product)
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const live = await fetchProductById(id)
+        if (live) setProduct(live)
+      } catch {
+        // Fallback already in state
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [id])
   
   const { addItem } = useCart()
   const [weight, setWeight] = useState(1000)
   const [quantity, setQuantity] = useState(1)
+
+  useEffect(() => {
+    if (product) {
+      setWeight(product.unit === 'kg' ? 1000 : 1)
+    }
+  }, [product])
   
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+        <div className="animate-pulse flex flex-col items-center gap-3">
+          <div className="w-16 h-16 rounded-2xl bg-stone-200" />
+          <div className="h-5 w-40 bg-stone-200 rounded" />
+        </div>
+      </div>
+    )
+  }
+
   if (!product) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <h2 className="text-2xl font-bold text-emerald-800 mb-4">Product Not Found</h2>
-        <GlassButton onClick={() => router.back()}>Go Back</GlassButton>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+        <h2 className="font-display text-2xl font-bold text-[#1A1A1A] mb-4">Product Not Found</h2>
+        <GlassButton onClick={() => router.back()} variant="primary">Go Back</GlassButton>
       </div>
     )
   }
@@ -39,12 +74,12 @@ export default function ProductDetailPage() {
     : (product.category as any)?.slug || 'fruits-vegetables'
   const relatedProducts = getProductsByCategory(categorySlug)
     .filter(p => p.id !== product.id)
-    .slice(0, 4)
+    .slice(0, 5)
 
   const handleAddToCart = () => {
-    // Add item (quantity times)
+    const actualWeight = product.unit === 'kg' ? weight : 1
     for (let i = 0; i < quantity; i++) {
-        addItem(product, weight)
+      addItem(product, actualWeight)
     }
     toast.success(`🛒 ${product.name} added to cart!`)
   }
@@ -53,7 +88,7 @@ export default function ProductDetailPage() {
     if (navigator.share) {
       navigator.share({
         title: product.name,
-        text: `Check out fresh ${product.name} at our store!`,
+        text: `Check out fresh ${product.name} at Kaikaari!`,
         url: window.location.href,
       }).catch(console.error)
     } else {
@@ -63,150 +98,174 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-28">
-      {/* Header section with emoji */}
-      <div className="relative pt-6 px-4 pb-12 bg-gradient-to-b from-emerald-100/50 to-transparent">
-        <div className="flex items-center justify-between z-10 relative mb-8">
-          <GlassButton onClick={() => router.back()} size="sm" className="rounded-full !px-3 !py-3">
-            <ArrowLeft className="h-5 w-5 text-emerald-800" />
-          </GlassButton>
-          <div className="flex gap-2">
-            <GlassButton onClick={handleShare} size="sm" className="rounded-full !px-3 !py-3">
-              <Share2 className="h-5 w-5 text-emerald-800" />
-            </GlassButton>
-            <GlassButton size="sm" className="rounded-full !px-3 !py-3">
-              <Heart className="h-5 w-5 text-emerald-800" />
-            </GlassButton>
-          </div>
-        </div>
-        
-        <motion.div 
-          className="flex justify-center my-8"
-          initial={{ scale: 0, rotate: -20 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring' as const, stiffness: 200, damping: 15 }}
+    <div className="flex flex-col px-4 sm:px-6 lg:px-8 py-6">
+      {/* Back button row */}
+      <div className="flex items-center justify-between mb-6">
+        <button 
+          onClick={() => router.back()} 
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:border-stone-300 hover:bg-stone-50 transition-colors text-xs font-semibold cursor-pointer shadow-sm"
         >
-          <div className="w-48 h-48 bg-white/40 backdrop-blur-2xl rounded-3xl flex items-center justify-center border-4 border-white/60 shadow-xl overflow-hidden relative">
-            {product.imageUrl ? (
-              <img
-                src={product.imageUrl}
-                alt={product.name}
-                className="w-full h-full object-cover rounded-2xl"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                  const fallback = (e.target as HTMLElement).nextElementSibling as HTMLElement;
-                  if (fallback) fallback.style.display = 'block';
-                }}
-              />
-            ) : null}
-            <span className={`text-8xl drop-shadow-lg ${product.imageUrl ? 'hidden' : 'block'}`}>
-              {product.emoji}
-            </span>
-          </div>
-        </motion.div>
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to Products</span>
+        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleShare} 
+            className="w-9 h-9 rounded-xl bg-white border border-stone-200 text-stone-600 hover:bg-stone-50 flex items-center justify-center transition-colors cursor-pointer shadow-sm"
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
+          <button 
+            className="w-9 h-9 rounded-xl bg-white border border-stone-200 text-stone-600 hover:bg-stone-50 flex items-center justify-center transition-colors cursor-pointer shadow-sm"
+          >
+            <Heart className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Details section */}
-      <motion.div 
-        className="px-4 -mt-8 flex flex-col gap-6 relative z-10"
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring' as const, stiffness: 200, damping: 20, delay: 0.1 }}
-      >
-        <GlassCard className="p-6">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <h1 className="text-3xl font-bold text-emerald-950">{product.name}</h1>
-              {product.tamilName && (
-                <p className="text-emerald-700/70 text-lg mt-1">{product.tamilName}</p>
+      {/* Main product display: 2 columns on desktop/laptop */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-10">
+        {/* Left Column: Product Image Card */}
+        <div className="md:col-span-5 lg:col-span-5">
+          <div className="card p-8 bg-white flex flex-col items-center justify-center min-h-[320px] md:min-h-[420px] relative overflow-hidden">
+            <div className="absolute top-4 left-4 z-10 flex flex-col gap-1.5">
+              {product.discount && (
+                <GlassBadge variant="sale" size="sm">{product.discount}% OFF</GlassBadge>
+              )}
+              <GlassBadge variant={product.inStock ? 'success' : 'danger'} size="sm">
+                {product.inStock ? 'Farm Fresh' : 'Sold Out'}
+              </GlassBadge>
+            </div>
+
+            <motion.div 
+              className="flex items-center justify-center"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            >
+              {product.imageUrl ? (
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="w-56 h-56 md:w-64 md:h-64 object-cover rounded-3xl shadow-md border border-stone-100"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                    const fallback = (e.target as HTMLElement).nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'block';
+                  }}
+                />
+              ) : null}
+              <span className={`text-9xl select-none ${product.imageUrl ? 'hidden' : 'block'}`}>
+                {product.emoji}
+              </span>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Right Column: Product Details and Actions */}
+        <div className="md:col-span-7 lg:col-span-7 flex flex-col gap-4">
+          <GlassCard className="p-6">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <h1 className="font-display text-3xl sm:text-4xl font-bold text-[#1A1A1A]">{product.name}</h1>
+                {product.tamilName && (
+                  <p className="text-stone-400 text-base mt-1 font-sans">{product.tamilName}</p>
+                )}
+              </div>
+            </div>
+            
+            <div className="mt-4 flex items-baseline gap-2.5">
+              <span className="font-display text-3xl sm:text-4xl font-bold text-[#B45309]">
+                {formatPrice(product.price * (1 - (product.discount || 0) / 100))}
+              </span>
+              <span className="text-stone-400 text-sm font-sans">/ {product.unit}</span>
+              {product.discount && product.discount > 0 && (
+                <span className="text-base line-through text-stone-400 ml-2">
+                  {formatPrice(product.price)}
+                </span>
               )}
             </div>
-            {product.inStock ? (
-              <GlassBadge className="bg-emerald-100/80 text-emerald-800">In Stock</GlassBadge>
-            ) : (
-              <GlassBadge className="bg-rose-100/80 text-rose-800">Out of Stock</GlassBadge>
-            )}
-          </div>
-          
-          <div className="mt-4 flex items-end gap-3">
-            <span className="text-3xl font-bold text-emerald-600">
-              {formatPrice(product.price * (1 - (product.discount || 0) / 100))}
-            </span>
-            <span className="text-emerald-800/60 pb-1">/ {product.unit}</span>
-            {product.discount && product.discount > 0 && (
-              <span className="text-lg line-through text-rose-400/70 ml-2 pb-1">
-                {formatPrice(product.price)}
-              </span>
-            )}
-          </div>
-        </GlassCard>
 
-        {product.unit === 'kg' && (
-          <GlassCard className="p-5">
-            <h3 className="font-semibold text-emerald-900 mb-3">Select Quantity</h3>
-            <WeightSelector 
-              selectedWeight={weight} 
-              onWeightChange={setWeight} 
-              unit={product.unit}
-            />
+            {/* Weight selector */}
+            {product.unit === 'kg' && (
+              <div className="mt-5 pt-4 border-t border-stone-100">
+                <h3 className="font-display text-sm font-semibold text-[#1A1A1A] mb-2.5">Select Weight / Quantity</h3>
+                <WeightSelector 
+                  selectedWeight={weight} 
+                  onWeightChange={setWeight} 
+                  unit={product.unit}
+                />
+              </div>
+            )}
+
+            {/* Quantity and CTA */}
+            <div className="mt-6 pt-5 border-t border-stone-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div className="flex items-center justify-between sm:justify-start gap-3 bg-[#F5F5F0] rounded-xl px-3 py-2 border border-stone-200">
+                <span className="text-xs font-semibold text-stone-500 font-sans">Quantity:</span>
+                <div className="flex items-center gap-2">
+                  <button 
+                    className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-[#14532D] shadow-sm hover:bg-stone-50 transition-colors cursor-pointer"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="w-6 text-center font-bold text-sm text-[#1A1A1A]">{quantity}</span>
+                  <button 
+                    className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-[#14532D] shadow-sm hover:bg-stone-50 transition-colors cursor-pointer"
+                    onClick={() => setQuantity(quantity + 1)}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+              
+              <button 
+                className="flex-1 py-3.5 px-6 text-base font-bold bg-[#14532D] hover:bg-[#166534] text-white shadow-lg shadow-[#14532D]/20 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                onClick={handleAddToCart}
+                disabled={!product.inStock}
+              >
+                <ShoppingBag className="h-5 w-5" />
+                {product.inStock ? 'Add to Shopping Cart' : 'Out of Stock'}
+              </button>
+            </div>
           </GlassCard>
-        )}
 
-        <GlassCard className="p-5 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-emerald-900">Number of items</span>
-            <div className="flex items-center gap-4 bg-white/50 rounded-full px-2 py-1 border border-white/50">
-              <button 
-                className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-emerald-800 shadow-sm"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <motion.span 
-                key={quantity}
-                initial={{ y: -10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className="w-4 text-center font-bold text-emerald-900"
-              >
-                {quantity}
-              </motion.span>
-              <button 
-                className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-emerald-800 shadow-sm"
-                onClick={() => setQuantity(quantity + 1)}
-              >
-                <Plus className="h-4 w-4" />
-              </button>
+          {/* Description Card */}
+          <GlassCard className="p-6">
+            <h3 className="font-display text-base font-semibold text-[#1A1A1A] mb-2">About this Farm Produce</h3>
+            <p className="text-stone-500 text-sm leading-relaxed font-sans">
+              {product.description || `Fresh, locally sourced ${product.name}. Hand-picked from farms to ensure natural nutrition, vibrant taste, and peak freshness for your daily cooking.`}
+            </p>
+            
+            <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-stone-100 text-xs font-sans text-stone-500">
+              <div className="flex items-center gap-2">
+                <Truck size={15} className="text-[#14532D] shrink-0" />
+                <span>30-min express</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={15} className="text-[#14532D] shrink-0" />
+                <span>100% organic</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <RefreshCw size={15} className="text-[#14532D] shrink-0" />
+                <span>Easy replacement</span>
+              </div>
             </div>
-          </div>
-          
-          <GlassButton 
-            className="w-full py-4 text-lg font-bold bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30 shadow-lg"
-            onClick={handleAddToCart}
-            disabled={!product.inStock}
-          >
-            <ShoppingBag className="mr-2 h-5 w-5" />
-            {product.inStock ? 'Add to Cart' : 'Out of Stock'}
-          </GlassButton>
-        </GlassCard>
+          </GlassCard>
+        </div>
+      </div>
 
-        <GlassCard className="p-5">
-          <h3 className="font-semibold text-emerald-900 mb-2">Description</h3>
-          <p className="text-emerald-800/80 leading-relaxed">
-            {product.description || `Fresh, locally sourced ${product.name}. Perfect for your daily cooking needs. Hand-picked to ensure the best quality and taste for your family.`}
-          </p>
-        </GlassCard>
-
-        {relatedProducts.length > 0 && (
-          <div className="mt-4">
-            <h3 className="font-semibold text-emerald-900 mb-4 px-1">Similar Items</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {relatedProducts.map(p => (
-                <VegetableCard key={p.id} product={p} />
-              ))}
-            </div>
+      {/* Similar products */}
+      {relatedProducts.length > 0 && (
+        <div className="mt-12">
+          <h3 className="font-display text-xl sm:text-2xl font-semibold text-[#1A1A1A] mb-4">You may also need</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4.5">
+            {relatedProducts.map((p, idx) => (
+              <VegetableCard key={p.id} product={p} index={idx} />
+            ))}
           </div>
-        )}
-      </motion.div>
+        </div>
+      )}
     </div>
   )
 }

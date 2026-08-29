@@ -6,12 +6,14 @@ export interface Product {
   unit: string;
   category?: string | Category;
   categoryId?: string;
-  imageUrl?: string | null; // Cloudflare R2 / Cloudflare CDN Public URL
+  imageUrl?: string | null;
   emoji: string;
   description?: string;
   inStock: boolean;
   discount?: number;
   isPopular?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Category {
@@ -22,6 +24,8 @@ export interface Category {
   emoji: string;
   color: string;
   _count?: { products: number };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CartItem {

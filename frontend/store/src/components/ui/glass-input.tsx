@@ -13,21 +13,21 @@ export const GlassInput = forwardRef<HTMLInputElement, GlassInputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className="block text-sm font-medium text-stone-700 mb-1.5 font-sans">
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
               {icon}
             </div>
           )}
           <input
             ref={ref}
             className={cn(
-              'w-full bg-white/40 backdrop-blur-lg border border-white/30 rounded-xl px-4 py-3 outline-none transition-all',
-              'focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-400',
+              'w-full bg-white border border-stone-200 rounded-xl px-4 py-3 outline-none transition-all text-sm text-[#1A1A1A] placeholder:text-stone-400',
+              'focus:border-[#14532D] focus:ring-2 focus:ring-[#14532D]/10',
               icon ? 'pl-10' : undefined,
               className
             )}

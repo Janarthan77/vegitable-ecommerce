@@ -12,13 +12,22 @@ interface StatsCardProps {
   color?: string
 }
 
+const colorMap: Record<string, { bg: string; text: string; accent: string }> = {
+  emerald: { bg: 'bg-emerald-50', text: 'text-[#14532D]', accent: '#14532D' },
+  orange:  { bg: 'bg-amber-50',   text: 'text-amber-800', accent: '#B45309' },
+  rose:    { bg: 'bg-rose-50',    text: 'text-rose-700',  accent: '#E11D48' },
+  sky:     { bg: 'bg-sky-50',     text: 'text-sky-800',   accent: '#0284C7' },
+  yellow:  { bg: 'bg-yellow-50',  text: 'text-yellow-800',accent: '#CA8A04' },
+}
+
 export function StatsCard({ title, value, icon, trend, color = 'emerald' }: StatsCardProps) {
   const [displayValue, setDisplayValue] = useState(typeof value === 'number' ? 0 : value)
+  const c = colorMap[color] || colorMap.emerald
 
   useEffect(() => {
     if (typeof value === 'number') {
-      const duration = 1000
-      const steps = 60
+      const duration = 750
+      const steps = 40
       const stepTime = duration / steps
       const increment = value / steps
       let current = 0
@@ -37,34 +46,28 @@ export function StatsCard({ title, value, icon, trend, color = 'emerald' }: Stat
     }
   }, [value])
 
-  const colorStyles: Record<string, string> = {
-    emerald: 'border-l-emerald-500 text-emerald-500',
-    orange: 'border-l-orange-500 text-orange-500',
-    rose: 'border-l-rose-500 text-rose-500',
-    sky: 'border-l-sky-500 text-sky-500',
-    yellow: 'border-l-yellow-400 text-yellow-500'
-  }
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 24 }}
     >
-      <GlassCard className={`relative overflow-hidden border-l-4 ${colorStyles[color] || colorStyles.emerald} p-4 sm:p-6`}>
+      <GlassCard className="relative overflow-hidden p-5">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
-            <h3 className="text-2xl sm:text-3xl font-bold text-slate-800">
-              {displayValue}
+            <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1.5 font-sans">
+              {title}
+            </p>
+            <h3 className="font-display text-2xl sm:text-3xl font-bold text-[#1A1A1A]">
+              {typeof value === 'number' && title.toLowerCase().includes('revenue') ? `₹${displayValue}` : displayValue}
             </h3>
             {trend && (
-              <p className={`text-xs mt-2 font-medium ${trend.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'}`}>
+              <p className="text-xs mt-1.5 font-medium text-stone-400 font-sans">
                 {trend}
               </p>
             )}
           </div>
-          <div className={`p-3 rounded-xl bg-white/50 backdrop-blur-md shadow-sm border border-white/40 ${colorStyles[color]?.split(' ')[1] || 'text-emerald-500'}`}>
+          <div className={`p-3 rounded-2xl ${c.bg} ${c.text} shadow-sm`}>
             {icon}
           </div>
         </div>

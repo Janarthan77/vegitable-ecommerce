@@ -3,10 +3,9 @@ import { Product, Category, Order, DashboardStats } from '@/types';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
 
 /**
- * Uploads an image file to backend, which uploads to Cloudflare R2 and returns the public CDN URL.
- * Only the returned URL is stored in the Database!
+ * Uploads an image file to backend and returns the public image URL.
  */
-export async function uploadImageToCloudflare(file: File): Promise<string> {
+export async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('image', file);
 
@@ -17,11 +16,11 @@ export async function uploadImageToCloudflare(file: File): Promise<string> {
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to upload image to Cloudflare storage');
+    throw new Error(errorData.error || 'Failed to upload image');
   }
 
   const data = await res.json();
-  return data.imageUrl; // Returns the Cloudflare public URL
+  return data.imageUrl;
 }
 
 export async function fetchProducts(params?: { category?: string; search?: string }): Promise<Product[]> {
@@ -129,6 +128,13 @@ export async function updateOrderStatus(id: string, status: string): Promise<Ord
   return await res.json();
 }
 
+export async function deleteOrder(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/orders/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete order');
+}
+
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   const res = await fetch(`${API_BASE_URL}/orders/stats`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch stats');
@@ -148,4 +154,28 @@ export async function adminLogin(password: string): Promise<{ success: boolean; 
   }
 
   return data;
+}
+
+export async function fetchStoreSettings(): Promise<any> {
+  const url = `${API_BASE_URL}/settings`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch settings: ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function updateStoreSettings(data: any): Promise<any> {
+  const url = `${API_BASE_URL}/settings`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to update settings: ${res.status}`);
+  }
+  return await res.json();
 }

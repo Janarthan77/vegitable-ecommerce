@@ -4,48 +4,65 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
 import { Order } from '@/types'
 import { GlassCard } from '@/components/ui/glass-card'
-import { GlassBadge } from '@/components/ui/glass-badge'
-import { GlassButton } from '@/components/ui/glass-button'
 import { formatPrice } from '@/lib/utils'
-import { ChevronDown, MapPin, Phone, User, Clock, Package } from 'lucide-react'
+import { ChevronDown, MapPin, Phone, User, Clock, Package, Trash2 } from 'lucide-react'
 
 interface OrderCardProps {
   order: Order
   onStatusChange: (orderId: string, status: Order['status']) => void
+  onDelete?: (orderId: string) => void
 }
 
-export function OrderCard({ order, onStatusChange }: OrderCardProps) {
+export function OrderCard({ order, onStatusChange, onDelete }: OrderCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false)
 
   const statusColors: Record<Order['status'], { bg: string, text: string, label: string }> = {
-    pending: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending' },
-    confirmed: { bg: 'bg-sky-100', text: 'text-sky-700', label: 'Confirmed' },
-    preparing: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Preparing' },
-    'out-for-delivery': { bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Out for Delivery' },
-    delivered: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Delivered' },
-    cancelled: { bg: 'bg-rose-100', text: 'text-rose-700', label: 'Cancelled' }
+    pending: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-800', label: 'Pending' },
+    confirmed: { bg: 'bg-sky-50 border-sky-200', text: 'text-sky-800', label: 'Confirmed' },
+    preparing: { bg: 'bg-orange-50 border-orange-200', text: 'text-orange-800', label: 'Preparing' },
+    'out-for-delivery': { bg: 'bg-indigo-50 border-indigo-200', text: 'text-indigo-800', label: 'Out for Delivery' },
+    delivered: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', label: 'Delivered' },
+    cancelled: { bg: 'bg-rose-50 border-rose-200', text: 'text-rose-700', label: 'Cancelled' }
   }
 
   const statuses: Order['status'][] = ['pending', 'confirmed', 'preparing', 'out-for-delivery', 'delivered', 'cancelled']
 
+  const displayId = order.id.length > 12 
+    ? `#${order.id.slice(0, 8).toUpperCase()}` 
+    : `#${order.id}`
+
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      className={isStatusMenuOpen ? 'relative z-50' : 'relative z-10'}
     >
+      {/* Click outside backdrop */}
+      {isStatusMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setIsStatusMenuOpen(false)} 
+        />
+      )}
+
       <GlassCard className="p-4 sm:p-5 relative overflow-visible">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <div className="bg-sky-100 p-2 rounded-lg text-sky-600">
+            <div className="bg-emerald-50 p-2.5 rounded-xl text-[#14532D] shadow-sm">
               <Package size={20} />
             </div>
             <div>
-              <h4 className="font-bold text-slate-800">#{order.id}</h4>
-              <p className="text-xs text-slate-500 flex items-center gap-1">
+              <div className="flex items-center gap-2">
+                <h4 className="font-display font-bold text-base text-[#1A1A1A]">{displayId}</h4>
+                <span className="text-[10px] text-stone-400 font-mono hidden sm:inline" title={order.id}>
+                  ({order.id.slice(-6)})
+                </span>
+              </div>
+              <p className="text-xs text-stone-400 flex items-center gap-1 mt-0.5 font-sans">
                 <Clock size={12} />
                 {new Date(order.createdAt).toLocaleString('en-IN', {
                   day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
@@ -55,37 +72,52 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
           </div>
           
           <div className="flex items-center justify-between sm:justify-end gap-3 relative">
-            <h4 className="font-bold text-slate-800">{formatPrice(order.total)}</h4>
+            <h4 className="font-display font-bold text-lg text-[#B45309]">{formatPrice(order.total)}</h4>
             
-            <div className="relative">
+            <div className="relative flex items-center gap-1.5 z-50">
               <button 
+                type="button"
                 onClick={() => setIsStatusMenuOpen(!isStatusMenuOpen)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border border-white/40 shadow-sm backdrop-blur-md transition-all ${statusColors[order.status].bg} ${statusColors[order.status].text}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border shadow-sm transition-all cursor-pointer ${statusColors[order.status].bg} ${statusColors[order.status].text}`}
               >
                 {statusColors[order.status].label}
                 <ChevronDown size={14} className={`transition-transform ${isStatusMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
+              {onDelete && (
+                <button
+                  type="button"
+                  title="Delete Order"
+                  onClick={() => onDelete(order.id)}
+                  className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+
               <AnimatePresence>
                 {isStatusMenuOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 top-full mt-2 w-48 bg-white/90 backdrop-blur-xl border border-white/40 shadow-xl rounded-2xl p-2 z-20 flex flex-col gap-1"
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    className="absolute right-0 top-full mt-2 w-48 bg-white border border-stone-200 shadow-2xl rounded-xl p-1.5 z-50 flex flex-col gap-1"
                   >
                     {statuses.map(s => (
                       <button
                         key={s}
-                        onClick={() => {
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
                           onStatusChange(order.id, s)
                           setIsStatusMenuOpen(false)
                         }}
-                        className={`text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-slate-100 ${
-                          order.status === s ? 'bg-slate-50 text-slate-900' : 'text-slate-600'
+                        className={`text-left px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center justify-between ${
+                          order.status === s ? 'bg-[#DCFCE7] text-[#14532D]' : 'text-stone-600 hover:bg-stone-50'
                         }`}
                       >
-                        {statusColors[s].label}
+                        <span>{statusColors[s].label}</span>
+                        {order.status === s && <span className="w-1.5 h-1.5 rounded-full bg-[#14532D]" />}
                       </button>
                     ))}
                   </motion.div>
@@ -95,30 +127,37 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-slate-50/50 rounded-xl p-3 border border-white/40">
-          <div className="flex items-start gap-2 text-sm text-slate-600">
-            <User size={16} className="mt-0.5 text-slate-400 shrink-0" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 bg-[#FAFAF6] rounded-xl p-3.5 border border-stone-100 text-xs font-sans">
+          <div className="flex items-start gap-2.5 text-stone-600">
+            <User size={15} className="mt-0.5 text-stone-400 shrink-0" />
             <div>
-              <p className="font-medium text-slate-800">{order.customerName || 'Guest User'}</p>
-              <div className="flex items-center gap-1 mt-0.5">
-                <Phone size={12} className="text-slate-400" />
+              <p className="font-semibold text-[#1A1A1A]">{order.customerName || 'Customer'}</p>
+              <div className="flex items-center gap-1 mt-0.5 text-stone-500">
+                <Phone size={11} className="text-stone-400" />
                 <span>{order.customerPhone || 'N/A'}</span>
               </div>
             </div>
           </div>
-          <div className="flex items-start gap-2 text-sm text-slate-600">
-            <MapPin size={16} className="mt-0.5 text-slate-400 shrink-0" />
-            <p className="line-clamp-2">{order.customerAddress || 'Pickup in store'}</p>
+          <div className="flex items-start gap-2.5 text-stone-600">
+            <MapPin size={15} className="mt-0.5 text-stone-400 shrink-0" />
+            <div>
+              <p className="line-clamp-2 text-stone-600">{order.customerAddress || 'Pickup in store'}</p>
+              {order.notes && (
+                <p className="text-[11px] text-amber-800 bg-amber-50 rounded px-1.5 py-0.5 mt-1 inline-block">
+                  Note: {order.notes}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
         <div>
           <button 
             onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full py-2 text-sm text-sky-600 font-medium flex items-center justify-center gap-1 hover:bg-white/40 rounded-xl transition-colors"
+            className="w-full py-2 text-xs text-[#14532D] font-semibold flex items-center justify-center gap-1 hover:bg-[#DCFCE7]/30 rounded-xl transition-colors cursor-pointer"
           >
-            {isExpanded ? 'Hide Items' : `View ${order.items.length} Items`}
-            <ChevronDown size={16} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            {isExpanded ? 'Hide Items' : `View ${Array.isArray(order.items) ? order.items.length : 0} Items`}
+            <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
           </button>
           
           <AnimatePresence>
@@ -129,16 +168,16 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="pt-3 border-t border-slate-200/50 mt-2 space-y-2">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm py-1">
+                <div className="pt-3 border-t border-stone-100 mt-2 space-y-2 text-xs font-sans">
+                  {Array.isArray(order.items) && order.items.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between py-1 border-b border-stone-50 last:border-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">{item.product.emoji}</span>
-                        <span className="text-slate-700">{item.product.name}</span>
-                        <span className="text-xs text-slate-400">x{item.quantity}</span>
+                        <span className="text-base">{item.product?.emoji || '🥬'}</span>
+                        <span className="font-medium text-[#1A1A1A]">{item.product?.name || 'Produce Item'}</span>
+                        <span className="text-stone-400">× {item.quantity || 1}</span>
                       </div>
-                      <span className="font-medium text-slate-800">
-                        {formatPrice(item.product.price * item.quantity)}
+                      <span className="font-semibold text-[#B45309]">
+                        {formatPrice((item.product?.price || 0) * (item.quantity || 1))}
                       </span>
                     </div>
                   ))}

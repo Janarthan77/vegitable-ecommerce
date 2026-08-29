@@ -8,7 +8,7 @@ import { ClipboardList, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { GlassCard } from '@/components/ui/glass-card'
 import { GlassButton } from '@/components/ui/glass-button'
-import { fetchOrders, updateOrderStatus } from '@/lib/api'
+import { fetchOrders, updateOrderStatus, deleteOrder } from '@/lib/api'
 
 export default function OrdersPage() {
   const [filter, setFilter] = useState<Order['status'] | 'all'>('all')
@@ -36,9 +36,20 @@ export default function OrdersPage() {
     try {
       await updateOrderStatus(orderId, status)
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o))
-      toast.success(`Order #${orderId} marked as ${status}`)
+      toast.success(`Order #${orderId.slice(0, 8).toUpperCase()} updated to ${status}`)
     } catch (err: any) {
       toast.error(err.message || 'Failed to update order status')
+    }
+  }
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to delete this order?')) return
+    try {
+      await deleteOrder(orderId)
+      setOrders(prev => prev.filter(o => o.id !== orderId))
+      toast.success(`Order #${orderId.slice(0, 8).toUpperCase()} deleted`)
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete order')
     }
   }
 
@@ -56,52 +67,53 @@ export default function OrdersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Orders Management 📋</h1>
-          <p className="text-slate-500 font-medium">Track customer orders, prepare bags, and update delivery status</p>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#1A1A1A]">Orders Management 📋</h1>
+          <p className="text-stone-500 font-sans text-sm mt-0.5">Track customer orders, prepare fresh bags, and update delivery status</p>
         </div>
         <GlassButton onClick={loadOrders} size="sm" variant="secondary">
-          <RefreshCw size={16} className={`mr-1.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          <RefreshCw size={15} className={`mr-1.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
         </GlassButton>
       </div>
 
-      <GlassCard className="p-2 sm:p-3 overflow-x-auto hide-scrollbar">
-        <div className="flex gap-2 min-w-max">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilter(tab.id)}
-              className="relative px-4 py-2 text-sm font-medium rounded-xl transition-colors"
-            >
-              {filter === tab.id && (
-                <motion.div
-                  layoutId="order-filter-active"
-                  className="absolute inset-0 bg-sky-100 rounded-xl border border-sky-200"
-                  transition={{ type: 'spring' as const, stiffness: 300, damping: 25 }}
-                />
-              )}
-              <span className={`relative z-10 ${filter === tab.id ? 'text-sky-700' : 'text-slate-600 hover:text-slate-800'}`}>
+      <GlassCard className="p-2 sm:p-2.5 overflow-x-auto">
+        <div className="flex gap-1.5 min-w-max">
+          {tabs.map((tab) => {
+            const isActive = filter === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id)}
+                className={`relative px-3.5 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                  isActive ? 'bg-[#14532D] text-white shadow-sm' : 'text-stone-600 hover:text-[#1A1A1A] hover:bg-stone-50'
+                }`}
+              >
                 {tab.label}
-              </span>
-            </button>
-          ))}
+              </button>
+            )
+          })}
         </div>
       </GlassCard>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <AnimatePresence mode="popLayout">
           {orders.length > 0 ? (
             orders.map(order => (
-              <OrderCard key={order.id} order={order} onStatusChange={handleStatusChange} />
+              <OrderCard 
+                key={order.id} 
+                order={order} 
+                onStatusChange={handleStatusChange} 
+                onDelete={handleDeleteOrder}
+              />
             ))
           ) : (
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }}
-              className="text-center py-16 text-slate-500 bg-white/30 backdrop-blur-sm rounded-2xl border border-white/40"
+              className="text-center py-16 text-stone-400 bg-white rounded-2xl border border-stone-200"
             >
-              <ClipboardList size={48} className="mx-auto mb-4 opacity-20" />
-              <p>No orders found for this status.</p>
+              <ClipboardList size={40} className="mx-auto mb-3 opacity-30 text-[#14532D]" />
+              <p className="text-sm font-sans">No orders found for this status.</p>
             </motion.div>
           )}
         </AnimatePresence>

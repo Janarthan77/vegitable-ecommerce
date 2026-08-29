@@ -1,101 +1,116 @@
 @import 'tailwindcss';
 
+/* ─── Design Tokens ──────────────────────────────────── */
 @theme inline {
-  --color-glass: rgba(255, 255, 255, 0.45);
-  --color-glass-border: rgba(255, 255, 255, 0.35);
-  --color-glass-dark: rgba(255, 255, 255, 0.65);
-  --color-shop-emerald: #10b981;
-  --color-shop-leaf: #22c55e;
-  --color-shop-lime: #84cc16;
-  --color-shop-carrot: #f97316;
-  --color-shop-radish: #e11d48;
-  --color-shop-lemon: #eab308;
-  --color-shop-sky: #0ea5e9;
-  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  /* Fonts */
+  --font-sans:    var(--font-sans, 'DM Sans', system-ui, sans-serif);
+  --font-display: var(--font-display, 'Playfair Display', Georgia, serif);
+
+  /* Brand Colours */
+  --color-forest:      #14532D;
+  --color-forest-mid:  #166534;
+  --color-forest-light:#DCFCE7;
+  --color-gold:        #B45309;
+  --color-gold-light:  #FEF3C7;
+  --color-ivory:       #FAFAF6;
+  --color-ivory-dark:  #F3F3EE;
+  --color-stone:       #E7E5E4;
+
+  /* Shadows */
+  --shadow-card:      0 2px 16px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-card-hover:0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-float:     0 4px 24px rgba(20,83,45,0.18);
 }
 
-body {
-  background-color: #f0fdf4;
-  overflow-x: hidden;
+/* ─── Base Reset ─────────────────────────────────────── */
+html  { scroll-behavior: smooth; }
+body  { background-color: #FAFAF6; overflow-x: clip; }
+
+/* ─── Typography Utilities ───────────────────────────── */
+.font-display { font-family: var(--font-display); }
+
+h1, h2, h3 { font-family: var(--font-display); }
+
+/* ─── Noise Texture (subtle grain for luxury feel) ───── */
+.noise-texture {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.025'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  opacity: 0.4;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-.glass {
-  background: var(--color-glass);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid var(--color-glass-border);
+/* ─── Premium Card ───────────────────────────────────── */
+.card {
+  background: #ffffff;
+  border: 1px solid #E7E5E4;
   border-radius: 1.25rem;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.25s ease, transform 0.2s ease;
+}
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
 }
 
-.glass-dark {
-  background: var(--color-glass-dark);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid var(--color-glass-border);
-  border-radius: 1.25rem;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+/* ─── Divider ────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #E7E5E4, transparent);
+  margin: 0;
 }
 
-.glass-nav {
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255,255,255,0.3);
+/* ─── Gold text ──────────────────────────────────────── */
+.text-gold { color: #B45309; }
+
+/* ─── Forest green utilities ─────────────────────────── */
+.bg-forest  { background-color: #14532D; }
+.text-forest { color: #14532D; }
+.border-forest { border-color: #14532D; }
+
+/* ─── Section header line accent ─────────────────────── */
+.section-accent {
+  display: inline-block;
+  width: 2.5rem;
+  height: 3px;
+  border-radius: 999px;
+  background: #14532D;
+  margin-bottom: 0.25rem;
 }
 
-@supports not (backdrop-filter: blur(16px)) {
-  .glass, .glass-dark, .glass-nav {
-    background: rgba(255, 255, 255, 0.95);
-  }
+/* ─── Scrollbars ─────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
+
+/* ─── Nav ────────────────────────────────────────────── */
+.premium-nav {
+  background: #ffffff;
+  border-top: 1px solid #E7E5E4;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.05);
 }
 
-.mesh-gradient {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  background-image: 
-    radial-gradient(at 40% 20%, hsla(140, 100%, 74%, 0.4) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, hsla(28, 100%, 74%, 0.4) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, hsla(50, 100%, 70%, 0.4) 0px, transparent 50%),
-    radial-gradient(at 80% 50%, hsla(80, 100%, 65%, 0.4) 0px, transparent 50%);
-  animation: mesh 30s ease-in-out infinite alternate;
+/* ─── Input focus ────────────────────────────────────── */
+.premium-input {
+  background: #ffffff;
+  border: 1.5px solid #E7E5E4;
+  border-radius: 0.75rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.premium-input:focus {
+  border-color: #14532D;
+  box-shadow: 0 0 0 3px rgba(20,83,45,0.08);
+  outline: none;
 }
 
-@keyframes mesh {
-  0% {
-    background-position: 0% 0%;
-  }
-  100% {
-    background-position: 100% 100%;
-  }
+/* ─── Animate in ─────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+.fade-up { animation: fadeUp 0.4s ease forwards; }
 
-@keyframes btnBounce {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(0.95);
-  }
+/* ─── Button bounce ──────────────────────────────────── */
+@keyframes btnTap {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(0.96); }
 }
-
-.btn-bounce:active {
-  animation: btnBounce 0.2s ease-in-out;
-}
-
-/* Scrollbar styles */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #22c55e;
-  border-radius: 4px;
-}
+.btn-tap:active { animation: btnTap 0.15s ease; }

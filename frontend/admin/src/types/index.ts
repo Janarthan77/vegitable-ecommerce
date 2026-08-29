@@ -6,7 +6,7 @@ export interface Product {
   unit: string; // kg, g, piece, bunch
   category?: Category | string;
   categoryId: string;
-  imageUrl?: string | null; // Cloudflare R2 / Cloudflare CDN Public URL
+  imageUrl?: string | null;
   emoji: string;
   description?: string;
   inStock: boolean;
