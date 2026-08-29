@@ -47,7 +47,28 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Vegetable E-Commerce Backend running at http://localhost:${PORT}`);
-  console.log(`🥬 API Endpoints available at http://localhost:${PORT}/api/`);
+// Root landing endpoint
+app.get('/', (_req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Vegetable E-Commerce Backend is running live 🥬',
+    endpoints: {
+      health: '/api/health',
+      products: '/api/products',
+      categories: '/api/categories',
+      orders: '/api/orders',
+      settings: '/api/settings',
+    },
+  });
 });
+
+// Export app for Vercel Serverless Functions
+export default app;
+
+// Only listen when not in Vercel serverless environment
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Vegetable E-Commerce Backend running at http://localhost:${PORT}`);
+    console.log(`🥬 API Endpoints available at http://localhost:${PORT}/api/`);
+  });
+}
