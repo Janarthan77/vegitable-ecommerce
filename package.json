@@ -7,32 +7,25 @@
     "dev:backend": "npm --prefix backend run dev",
     "dev:store": "npm --prefix frontend/store run dev",
     "dev:admin": "npm --prefix frontend/admin run dev",
-    "build": "npm run build:backend ; npm run build:store ; npm run build:admin",
-    "build:backend": "npm --prefix backend run build",
-    "build:store": "npm --prefix frontend/store run build",
-    "build:admin": "npm --prefix frontend/admin run build",
-    "db:push": "npm --prefix backend run prisma:push",
-    "db:seed": "npm --prefix backend run seed"
+    "build": "npm --prefix backend run build",
+    "postinstall": "npm --prefix backend run prisma:generate"
   },
   "dependencies": {
-    "framer-motion": "^13.1.1",
-    "lucide-react": "^1.35.0",
-    "next": "16.3.3",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "sonner": "^2.0.8",
-    "vaul": "^1.1.2",
-    "zustand": "^5.0.15"
+    "@aws-sdk/client-s3": "^3.750.0",
+    "@prisma/client": "^5.22.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^20.17.19",
     "concurrently": "^9.2.4",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.3",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
   }
 }
