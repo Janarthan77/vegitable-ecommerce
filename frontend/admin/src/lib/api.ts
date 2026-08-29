@@ -1,6 +1,9 @@
 import { Product, Category, Order, DashboardStats } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
+const API_BASE_URL = RAW_API_URL.replace(/\/+$/, '').endsWith('/api')
+  ? RAW_API_URL.replace(/\/+$/, '')
+  : `${RAW_API_URL.replace(/\/+$/, '')}/api`;
 
 /**
  * Uploads an image file to backend and returns the public image URL.
