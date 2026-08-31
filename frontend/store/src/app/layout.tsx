@@ -1,10 +1,12 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Playfair_Display, DM_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'sonner';
 import { FloatingNav } from '@/components/ui/floating-nav';
 import { DesktopNavbar } from '@/components/store/desktop-navbar';
 import { ReduxProvider } from '@/components/providers/redux-provider';
+import { InstallPromptModal } from '@/components/pwa/install-prompt-modal';
+import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register';
 
 const playfair = Playfair_Display({
   variable: '--font-display',
@@ -20,6 +22,14 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
+export const viewport: Viewport = {
+  themeColor: '#14532D',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
   title: 'Kaikaari | உங்கள் காய்கறி கடை',
   description: 'Farm fresh vegetables delivered to your doorstep. Handpicked quality every day.',
@@ -28,6 +38,10 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: 'Kaikaari',
+  },
+  icons: {
+    icon: '/icons/icon-192.png',
+    apple: '/icons/apple-touch-icon.png',
   },
 };
 
@@ -47,6 +61,12 @@ export default function RootLayout({
         className="min-h-full flex flex-col font-sans text-gray-900 bg-[#FAFAF6] selection:bg-forest selection:text-white"
       >
         <ReduxProvider>
+          {/* Service Worker Registration */}
+          <ServiceWorkerRegister />
+
+          {/* QR Code Scan / Mobile PWA Install Prompt Modal */}
+          <InstallPromptModal />
+
           {/* Subtle warm texture overlay */}
           <div className="fixed inset-0 pointer-events-none -z-10 noise-texture" />
 

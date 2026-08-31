@@ -27,9 +27,9 @@ export function VegetableCard({ product, index = 0 }: VegetableCardProps) {
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault()
-    const defaultWeight = product.unit === 'kg' ? 500 : 1
+    const defaultWeight = product.unit === 'kg' ? 250 : 1
     addItem(product, defaultWeight)
-    toast.success(`${product.name} added to cart`)
+    toast.success(`${product.name} (250g) added to cart`)
   }
 
   const handleIncrement = (e: React.MouseEvent) => {

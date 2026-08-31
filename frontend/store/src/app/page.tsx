@@ -4,7 +4,6 @@ import { HeroBanner }     from '@/components/store/hero-banner'
 import { SearchBar }      from '@/components/store/search-bar'
 import { CategoryChips }  from '@/components/store/category-chips'
 import { VegetableCard }  from '@/components/store/vegetable-card'
-import { products }       from '@/lib/data/products'
 import { motion }         from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { fetchProducts }  from '@/lib/api'
@@ -33,14 +32,21 @@ function SectionHeader({ title, count }: { title: string; count?: number }) {
 }
 
 export default function HomePage() {
-  const [productList, setProductList] = useState(products)
+  const [productList, setProductList] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
         const live = await fetchProducts()
-        if (live && live.length > 0) setProductList(live)
-      } catch { /* fallback */ }
+        if (live && Array.isArray(live)) {
+          setProductList(live)
+        }
+      } catch (err) {
+        console.error('Error fetching live products:', err)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [])

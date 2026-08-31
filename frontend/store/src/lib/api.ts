@@ -41,16 +41,11 @@ export async function fetchCategories(): Promise<Category[]> {
     if (!res.ok) throw new Error('Failed to fetch categories');
     return await res.json();
   } catch (error) {
-    console.warn('Backend categories API not reachable, using fallback:', error);
-    return [
-      { id: '1', name: 'Leafy Greens', tamilName: 'கீரை வகைகள்', slug: 'leafy-greens', emoji: '🥬', color: 'emerald' },
-      { id: '2', name: 'Root Vegetables', tamilName: 'கிழங்கு வகைகள்', slug: 'root-vegetables', emoji: '🥕', color: 'orange' },
-      { id: '3', name: 'Gourds', tamilName: 'சுரை வகைகள்', slug: 'gourds', emoji: '🥒', color: 'lime' },
-      { id: '4', name: 'Daily Essentials', tamilName: 'தினசரி தேவை', slug: 'daily-essentials', emoji: '🧅', color: 'rose' },
-      { id: '5', name: 'Fruits & Vegetables', tamilName: 'காய்கறிகள்', slug: 'fruits-vegetables', emoji: '🍅', color: 'yellow' },
-    ];
+    console.warn('Backend categories API not reachable:', error);
+    return [];
   }
 }
+
 
 export async function submitOrder(orderData: {
   customerName: string;

@@ -5,7 +5,8 @@ import { useState } from 'react'
 import { Order } from '@/types'
 import { GlassCard } from '@/components/ui/glass-card'
 import { formatPrice } from '@/lib/utils'
-import { ChevronDown, MapPin, Phone, User, Clock, Package, Trash2 } from 'lucide-react'
+import { ChevronDown, MapPin, Phone, User, Clock, Package, Trash2, MessageCircle } from 'lucide-react'
+import { buildAdminOrderWhatsAppMessage } from '@/lib/utils'
 
 interface OrderCardProps {
   order: Order
@@ -128,15 +129,30 @@ export function OrderCard({ order, onStatusChange, onDelete }: OrderCardProps) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 bg-[#FAFAF6] rounded-xl p-3.5 border border-stone-100 text-xs font-sans">
-          <div className="flex items-start gap-2.5 text-stone-600">
-            <User size={15} className="mt-0.5 text-stone-400 shrink-0" />
-            <div>
-              <p className="font-semibold text-[#1A1A1A]">{order.customerName || 'Customer'}</p>
-              <div className="flex items-center gap-1 mt-0.5 text-stone-500">
-                <Phone size={11} className="text-stone-400" />
-                <span>{order.customerPhone || 'N/A'}</span>
+          <div className="flex items-start justify-between gap-2.5 text-stone-600">
+            <div className="flex items-start gap-2.5">
+              <User size={15} className="mt-0.5 text-stone-400 shrink-0" />
+              <div>
+                <p className="font-semibold text-[#1A1A1A]">{order.customerName || 'Customer'}</p>
+                <div className="flex items-center gap-1 mt-0.5 text-stone-500">
+                  <Phone size={11} className="text-stone-400" />
+                  <span>{order.customerPhone || 'N/A'}</span>
+                </div>
               </div>
             </div>
+
+            {order.customerPhone && (
+              <a
+                href={`https://wa.me/${order.customerPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(buildAdminOrderWhatsAppMessage(order))}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white text-[11px] font-bold shadow-sm transition-transform active:scale-95 shrink-0"
+                title="Send Order Details to Customer on WhatsApp"
+              >
+                <MessageCircle size={13} />
+                <span>WhatsApp</span>
+              </a>
+            )}
           </div>
           <div className="flex items-start gap-2.5 text-stone-600">
             <MapPin size={15} className="mt-0.5 text-stone-400 shrink-0" />

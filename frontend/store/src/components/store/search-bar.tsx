@@ -1,8 +1,8 @@
 'use client'
 
 import { Search, X } from 'lucide-react'
-import { useState, useMemo, useEffect, useRef } from 'react'
-import { searchProducts } from '@/lib/data/products'
+import { useState, useEffect, useRef } from 'react'
+import { fetchProducts } from '@/lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { formatPrice } from '@/lib/utils'
@@ -11,11 +11,26 @@ export function SearchBar() {
   const [query, setQuery]   = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [focused, setFocused] = useState(false)
+  const [results, setResults] = useState<any[]>([])
   const wrapperRef = useRef<HTMLDivElement>(null)
 
-  const results = useMemo(() => {
-    if (query.trim().length < 2) return []
-    return searchProducts(query).slice(0, 6)
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setResults([])
+      return
+    }
+
+    const timer = setTimeout(() => {
+      fetchProducts({ search: query.trim() })
+        .then((items) => {
+          if (items && Array.isArray(items)) {
+            setResults(items.slice(0, 6))
+          }
+        })
+        .catch(() => setResults([]))
+    }, 200)
+
+    return () => clearTimeout(timer)
   }, [query])
 
   useEffect(() => {

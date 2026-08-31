@@ -4,29 +4,44 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Leaf, ShoppingBag, MessageCircle, ShieldCheck, Search } from 'lucide-react'
 import { useCart } from '@/lib/store/use-cart'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, isStoreOpen } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { SearchBar } from '@/components/store/search-bar'
-
-const navLinks = [
-  { name: 'All Items', href: '/category/all' },
-  { name: 'Leafy Greens 🥬', href: '/category/leafy-greens' },
-  { name: 'Root Veggies 🥕', href: '/category/root-vegetables' },
-  { name: 'Gourds 🫛', href: '/category/gourds' },
-  { name: 'Daily Essentials 🧅', href: '/category/daily-essentials' },
-]
+import { fetchStoreSettings, fetchCategories } from '@/lib/api'
 
 export function DesktopNavbar() {
   const pathname = usePathname()
   const { getItemCount, getTotal } = useCart()
   const [mounted, setMounted] = useState(false)
+  const [settings, setSettings] = useState<any>(null)
+  const [categories, setCategories] = useState<any[]>([])
 
   useEffect(() => {
     setMounted(true)
+    fetchStoreSettings().then(data => {
+      if (data) setSettings(data)
+    }).catch(() => {})
+
+    fetchCategories().then(data => {
+      if (data && Array.isArray(data)) setCategories(data)
+    }).catch(() => {})
   }, [])
+
+  const navLinks = [
+    { name: 'All Items', href: '/category/all' },
+    ...categories.map(c => ({
+      name: `${c.name} ${c.emoji || ''}`,
+      href: `/category/${c.slug}`,
+    })),
+  ]
 
   const itemCount = mounted ? getItemCount() : 0
   const total = mounted ? getTotal() : 0
+
+  const workingHours = settings?.working_hours
+  const storeStatus = isStoreOpen(workingHours)
+  const openTime = workingHours ? `${workingHours.openHour}:${workingHours.openMinute} ${workingHours.openPeriod}` : '06:00 AM'
+  const closeTime = workingHours ? `${workingHours.closeHour}:${workingHours.closeMinute} ${workingHours.closePeriod}` : '09:00 PM'
 
   return (
     <header className="hidden md:block sticky top-0 z-[100] bg-[#FAFAF6]/95 backdrop-blur-md border-b border-stone-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
@@ -34,11 +49,11 @@ export function DesktopNavbar() {
       <div className="bg-[#14532D] text-white text-xs py-1.5 px-6 font-sans">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-semibold text-emerald-200">Open Daily:</span>
-            <span>06:00 AM – 09:00 PM</span>
+            <span className={`inline-block w-2 h-2 rounded-full ${storeStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+            <span className="font-semibold text-emerald-200">{storeStatus.isOpen ? 'Open:' : 'Shop Closed:'}</span>
+            <span>{openTime} – {closeTime}</span>
             <span className="text-emerald-300/40 hidden lg:inline">|</span>
-            <span className="hidden lg:inline">Farm fresh produce delivered within 30 minutes</span>
+            <span className="hidden lg:inline">{storeStatus.isOpen ? 'Farm fresh produce delivered within 30 minutes' : 'Orders paused outside working hours'}</span>
           </div>
           <div className="flex items-center gap-4 text-emerald-100">
             <a
@@ -107,16 +122,6 @@ export function DesktopNavbar() {
               </span>
             </div>
           </Link>
-
-          <a
-            href="https://wa.me/919876543210?text=Hello%20Kaikaari,%20I%20would%20like%20to%20order%20fresh%20vegetables."
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#22c55e] text-white text-xs font-bold shadow-md shadow-[#25D366]/20 transition-all cursor-pointer"
-          >
-            <MessageCircle size={16} />
-            <span>Order on WhatsApp</span>
-          </a>
         </div>
       </div>
 

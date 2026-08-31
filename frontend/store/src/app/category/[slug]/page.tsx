@@ -4,9 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { CategoryChips } from '@/components/store/category-chips'
 import { VegetableCard } from '@/components/store/vegetable-card'
-import { getProductsByCategory, products } from '@/lib/data/products'
-import { getCategoryBySlug } from '@/lib/data/categories'
-import { fetchProducts } from '@/lib/api'
+import { fetchProducts, fetchCategories } from '@/lib/api'
 import { Product } from '@/types'
 import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
@@ -17,27 +15,35 @@ export default function CategoryPage() {
   const router = useRouter()
   const slug = params.slug as string
   
-  const category = getCategoryBySlug(slug)
-  const [categoryProducts, setCategoryProducts] = useState<Product[]>(() =>
-    slug === 'all' ? products : getProductsByCategory(slug)
-  )
+  const [currentCategory, setCurrentCategory] = useState<any>(null)
+  const [categoryProducts, setCategoryProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const live = await fetchProducts(slug === 'all' ? undefined : { category: slug })
-        if (live && live.length > 0) {
-          setCategoryProducts(live)
+        const [liveProds, liveCats] = await Promise.all([
+          fetchProducts(slug === 'all' ? undefined : { category: slug }),
+          fetchCategories(),
+        ])
+        if (liveProds && Array.isArray(liveProds)) {
+          setCategoryProducts(liveProds)
         }
-      } catch {
-        // Fallback to local synced products
+        if (liveCats && Array.isArray(liveCats)) {
+          const found = liveCats.find((c: any) => c.slug === slug)
+          if (found) setCurrentCategory(found)
+        }
+      } catch (err) {
+        console.error('Error fetching live category data:', err)
+      } finally {
+        setLoading(false)
       }
     }
     load()
   }, [slug])
   
-  const title = slug === 'all' ? 'All Items' : category?.name || 'Category'
-  const emoji = slug === 'all' ? '🥬' : category?.emoji || '🏷️'
+  const title = slug === 'all' ? 'All Items' : currentCategory?.name || 'Category'
+  const emoji = slug === 'all' ? '🥬' : currentCategory?.emoji || '🏷️'
 
   const container = {
     hidden: { opacity: 0 },

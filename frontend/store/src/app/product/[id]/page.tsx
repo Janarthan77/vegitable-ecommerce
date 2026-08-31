@@ -7,14 +7,13 @@ import { GlassButton } from '@/components/ui/glass-button'
 import { GlassBadge } from '@/components/ui/glass-badge'
 import { GlassCard } from '@/components/ui/glass-card'
 import { useCart } from '@/lib/store/use-cart'
-import { getProductById, getProductsByCategory } from '@/lib/data/products'
 import { formatPrice } from '@/lib/utils'
+import { fetchProductById, fetchProducts } from '@/lib/api'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ShoppingBag, Share2, Heart, Plus, Minus, Truck, ShieldCheck, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { VegetableCard } from '@/components/store/vegetable-card'
 
-import { fetchProductById } from '@/lib/api'
 import { Product } from '@/types'
 import { useEffect } from 'react'
 
@@ -22,8 +21,8 @@ export default function ProductDetailPage() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
-  const [product, setProduct] = useState<Product | null>(() => getProductById(id) || null)
-  const [loading, setLoading] = useState(!product)
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
@@ -40,13 +39,29 @@ export default function ProductDetailPage() {
   }, [id])
   
   const { addItem } = useCart()
-  const [weight, setWeight] = useState(1000)
+  const [weight, setWeight] = useState(250)
   const [quantity, setQuantity] = useState(1)
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
 
   useEffect(() => {
     if (product) {
-      setWeight(product.unit === 'kg' ? 1000 : 1)
+      setWeight(product.unit === 'kg' ? 250 : 1)
     }
+  }, [product])
+
+  useEffect(() => {
+    if (!product) return
+    const categorySlug = typeof product.category === 'string' 
+      ? product.category 
+      : (product.category as any)?.slug || 'all'
+    
+    fetchProducts({ category: categorySlug })
+      .then(list => {
+        if (list && Array.isArray(list)) {
+          setRelatedProducts(list.filter(p => p.id !== product.id).slice(0, 5))
+        }
+      })
+      .catch(() => {})
   }, [product])
   
   if (loading) {
@@ -68,13 +83,7 @@ export default function ProductDetailPage() {
       </div>
     )
   }
-  
-  const categorySlug = typeof product.category === 'string' 
-    ? product.category 
-    : (product.category as any)?.slug || 'fruits-vegetables'
-  const relatedProducts = getProductsByCategory(categorySlug)
-    .filter(p => p.id !== product.id)
-    .slice(0, 5)
+
 
   const handleAddToCart = () => {
     const actualWeight = product.unit === 'kg' ? weight : 1

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/db.js';
+import { sendAdminWhatsAppAlert } from '../config/whatsapp.js';
 
 export async function getOrders(req: Request, res: Response): Promise<void> {
   try {
@@ -35,6 +36,49 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    // Check store working hours setting from database
+    const hoursRecord = await prisma.storeSetting.findUnique({
+      where: { key: 'working_hours' },
+    });
+    if (hoursRecord) {
+      try {
+        const workingHours = JSON.parse(hoursRecord.value);
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const now = new Date();
+        const currentDay = days[now.getDay()];
+
+        if (Array.isArray(workingHours.workingDays) && !workingHours.workingDays.includes(currentDay)) {
+          res.status(400).json({
+            error: `Orders cannot be placed today. Store is closed on ${currentDay}.`,
+          });
+          return;
+        }
+
+        const parseToMinutes = (hourStr: string, minStr: string, periodStr: string) => {
+          let h = parseInt(hourStr || '0', 10);
+          const m = parseInt(minStr || '0', 10);
+          if (periodStr === 'PM' && h < 12) h += 12;
+          if (periodStr === 'AM' && h === 12) h = 0;
+          return h * 60 + m;
+        };
+
+        const openMinutes = parseToMinutes(workingHours.openHour, workingHours.openMinute, workingHours.openPeriod);
+        const closeMinutes = parseToMinutes(workingHours.closeHour, workingHours.closeMinute, workingHours.closePeriod);
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        if (currentMinutes < openMinutes || currentMinutes > closeMinutes) {
+          const openTimeStr = `${workingHours.openHour}:${workingHours.openMinute} ${workingHours.openPeriod}`;
+          const closeTimeStr = `${workingHours.closeHour}:${workingHours.closeMinute} ${workingHours.closePeriod}`;
+          res.status(400).json({
+            error: `Store is currently closed. Orders are only accepted between ${openTimeStr} and ${closeTimeStr}.`,
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn('Error evaluating store hours check:', err);
+      }
+    }
+
     const order = await prisma.order.create({
       data: {
         customerName,
@@ -47,9 +91,21 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       },
     });
 
+    // Trigger background automated WhatsApp alert to Admin
+    const parsedItems = typeof items === 'string' ? JSON.parse(items) : items;
+    sendAdminWhatsAppAlert({
+      id: order.id,
+      customerName,
+      customerPhone,
+      customerAddress,
+      notes: notes || '',
+      total: Number(total),
+      items: parsedItems,
+    }).catch((err) => console.error('Failed to send admin WhatsApp notification:', err));
+
     res.status(201).json({
       ...order,
-      items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
+      items: parsedItems,
     });
   } catch (error: any) {
     console.error('Error creating order:', error);

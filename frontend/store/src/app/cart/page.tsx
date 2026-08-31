@@ -1,7 +1,7 @@
 'use client'
 
 import { useCart } from '@/lib/store/use-cart'
-import { formatPrice, formatProductWeight, getItemTotalPrice } from '@/lib/utils'
+import { formatPrice, formatProductWeight, getItemTotalPrice, isStoreOpen } from '@/lib/utils'
 import { GlassCard } from '@/components/ui/glass-card'
 import { GlassBadge } from '@/components/ui/glass-badge'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -13,7 +13,7 @@ import { fetchStoreSettings } from '@/lib/api'
 
 export default function CartPage() {
   const [mounted, setMounted] = useState(false)
-  const { items, updateQuantity, removeItem, getTotal, getItemCount } = useCart()
+  const { items, updateQuantity, updateWeight, removeItem, getTotal, getItemCount } = useCart()
   const total = getTotal()
   const itemCount = getItemCount()
   const router = useRouter()
@@ -22,6 +22,10 @@ export default function CartPage() {
     minOrder: 100,
     deliveryCharge: 0,
     deliveryRadius: 10,
+  })
+  const [storeStatus, setStoreStatus] = useState<{ isOpen: boolean; message: string }>({
+    isOpen: true,
+    message: 'Checking...',
   })
   
   useEffect(() => {
@@ -34,6 +38,9 @@ export default function CartPage() {
             deliveryCharge: Number(data.delivery_settings.deliveryCharge) || 0,
             deliveryRadius: Number(data.delivery_settings.deliveryRadius) || 10,
           })
+        }
+        if (data?.working_hours) {
+          setStoreStatus(isStoreOpen(data.working_hours))
         }
       })
       .catch(() => {})
@@ -112,10 +119,23 @@ export default function CartPage() {
                     {item.product.tamilName && (
                       <p className="text-xs text-stone-400 font-sans mt-0.5">{item.product.tamilName}</p>
                     )}
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <span className="text-xs text-stone-500 font-sans">
-                        {formatProductWeight(item.product, item.weight)}
-                      </span>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      {item.product.unit === 'kg' ? (
+                        <select
+                          value={item.weight}
+                          onChange={(e) => updateWeight(item.product.id, Number(e.target.value))}
+                          className="text-xs bg-white border border-stone-200 rounded-lg px-2 py-1 font-semibold text-stone-700 focus:outline-none focus:border-emerald-600 cursor-pointer shadow-sm"
+                        >
+                          <option value={250}>250g</option>
+                          <option value={500}>500g</option>
+                          <option value={1000}>1 kg</option>
+                          <option value={2000}>2 kg</option>
+                        </select>
+                      ) : (
+                        <span className="text-xs text-stone-500 font-sans font-medium">
+                          {formatProductWeight(item.product, item.weight)}
+                        </span>
+                      )}
                       <span className="text-stone-300">·</span>
                       <span className="font-bold text-[#B45309] text-xs sm:text-sm">
                         {formatPrice(getItemTotalPrice(item))}
@@ -187,12 +207,20 @@ export default function CartPage() {
               </div>
             </div>
 
+            {!storeStatus.isOpen && (
+              <div className="p-3 mb-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold text-center leading-relaxed">
+                🚫 {storeStatus.message}
+              </div>
+            )}
+
             <button 
-              className="w-full py-4 text-base font-bold bg-[#14532D] hover:bg-[#166534] text-white shadow-lg shadow-[#14532D]/20 rounded-xl flex items-center justify-center gap-2 transition-colors tracking-wide cursor-pointer"
+              disabled={!storeStatus.isOpen}
+              className="w-full py-4 text-base font-bold bg-[#14532D] hover:bg-[#166534] text-white shadow-lg shadow-[#14532D]/20 rounded-xl flex items-center justify-center gap-2 transition-colors tracking-wide cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => router.push('/checkout')}
             >
-              Proceed to Checkout <ArrowRight className="h-5 w-5" />
+              {!storeStatus.isOpen ? 'Shop Closed' : 'Proceed to Checkout'} <ArrowRight className="h-5 w-5" />
             </button>
+
             
             <div className="mt-4 text-center">
               <Link href="/" className="text-xs text-[#14532D] hover:text-[#166534] font-medium">

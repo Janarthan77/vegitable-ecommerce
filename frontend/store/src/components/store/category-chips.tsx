@@ -1,9 +1,11 @@
 'use client'
 
-import { categories } from '@/lib/data/categories'
+import { fetchCategories } from '@/lib/api'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useState, useEffect } from 'react'
+import { Category } from '@/types'
 
 interface CategoryGridProps {
   activeCategory?: string
@@ -21,9 +23,21 @@ const cardVar = {
 const ALL = { id: 'all', name: 'All Items', tamilName: 'அனைத்தும்', slug: 'all', emoji: '🛒', color: 'from-[#14532D] to-[#166534]', href: '/' }
 
 export function CategoryChips({ activeCategory = 'all' }: CategoryGridProps) {
+  const [categoriesList, setCategoriesList] = useState<any[]>([])
+
+  useEffect(() => {
+    fetchCategories()
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          setCategoriesList(data)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const all = [
     { ...ALL, href: '/' },
-    ...categories.map((c) => ({ ...c, href: `/category/${c.slug}` })),
+    ...categoriesList.map((c) => ({ ...c, href: `/category/${c.slug}` })),
   ]
 
   return (

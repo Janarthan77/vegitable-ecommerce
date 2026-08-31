@@ -6,7 +6,7 @@ import { useCart } from '@/lib/store/use-cart'
 import { GlassCard } from '@/components/ui/glass-card'
 import { GlassButton } from '@/components/ui/glass-button'
 import { GlassInput } from '@/components/ui/glass-input'
-import { formatPrice, formatProductWeight, getItemTotalPrice, buildWhatsAppMessage, generateOrderId } from '@/lib/utils'
+import { formatPrice, formatProductWeight, getItemTotalPrice, generateOrderId, isStoreOpen } from '@/lib/utils'
 import { submitOrder, fetchStoreSettings } from '@/lib/api'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ShoppingBag } from 'lucide-react'
@@ -40,6 +40,11 @@ export default function CheckoutPage() {
     }
   }, [items.length, router])
 
+  const [storeStatus, setStoreStatus] = useState<{ isOpen: boolean; message: string }>({
+    isOpen: true,
+    message: 'Checking store hours...',
+  })
+
   useEffect(() => {
     fetchStoreSettings()
       .then(data => {
@@ -49,6 +54,10 @@ export default function CheckoutPage() {
             deliveryCharge: Number(data.delivery_settings.deliveryCharge) || 0,
             deliveryRadius: Number(data.delivery_settings.deliveryRadius) || 10,
           })
+        }
+        if (data?.working_hours) {
+          const status = isStoreOpen(data.working_hours)
+          setStoreStatus(status)
         }
       })
       .catch(() => {})
@@ -105,22 +114,6 @@ export default function CheckoutPage() {
     } catch {
       // Continue with local order id
     }
-
-    // Build WhatsApp message for owner
-    const message = buildWhatsAppMessage(
-      items,
-      finalTotal,
-      formData.name,
-      formData.phone,
-      formData.address,
-      formData.notes,
-      orderId.slice(0, 8).toUpperCase()
-    )
-
-    // Open WhatsApp directly to shop owner (+91 98765 43210)
-    const ownerNumber = '919876543210'
-    const waUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(message)}`
-    window.open(waUrl, '_blank')
 
     clearCart()
     toast.success('Order placed successfully!')
@@ -239,13 +232,23 @@ export default function CheckoutPage() {
               <span className="font-display font-bold text-3xl text-[#B45309]">{formatPrice(finalTotal)}</span>
             </div>
 
+            {/* Store Closed Warning Banner */}
+            {!storeStatus.isOpen && (
+              <div className="p-3.5 mb-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold text-center leading-relaxed">
+                🚫 {storeStatus.message}
+                <p className="font-normal text-[11px] text-rose-600 mt-0.5">
+                  Orders are temporarily paused outside store working hours.
+                </p>
+              </div>
+            )}
+
             <button 
               type="button"
-              disabled={submitting}
+              disabled={submitting || !storeStatus.isOpen}
               onClick={handleOrder}
-              className="w-full py-4 bg-[#14532D] hover:bg-[#166534] active:scale-[0.99] text-white font-bold text-base rounded-xl shadow-lg shadow-[#14532D]/20 flex items-center justify-center gap-2 transition-all cursor-pointer tracking-wide disabled:opacity-50"
+              className="w-full py-4 bg-[#14532D] hover:bg-[#166534] active:scale-[0.99] text-white font-bold text-base rounded-xl shadow-lg shadow-[#14532D]/20 flex items-center justify-center gap-2 transition-all cursor-pointer tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Placing Order...' : 'Order'}
+              {submitting ? 'Placing Order...' : !storeStatus.isOpen ? 'Shop is Closed' : 'Order'}
             </button>
           </GlassCard>
         </div>
@@ -253,3 +256,4 @@ export default function CheckoutPage() {
     </div>
   )
 }
+
